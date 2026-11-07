@@ -39,14 +39,6 @@ The portable build writes logs to `%TEMP%\TranslucentTB` (warnings and errors on
 The package is signed with a self-signed certificate (`CN=eternity`), so Windows only
 installs it after that certificate is trusted. This is a one-time administrator step.
 
-> **Coming from a development build?** These steps are all a normal user needs. Only if
-> you previously installed this project through Visual Studio (F5) or an older development
-> package with the same version, remove it first, otherwise the install can fail with
-> `0x80073D06`:
->
-> ```powershell
-> Get-AppxPackage TranslucentTB | Remove-AppxPackage
-> ```
 
 ### 1. Trust the certificate (administrator)
 
@@ -70,12 +62,16 @@ code-signing certificate is used in the future, this step will disappear.
 
 ### 2. Install the package
 
-Double-click `TranslucentTB-Lite-<version>-x64.msix`, or in an administrator or normal
-PowerShell:
+The certificate from step 1 must be trusted **before** you double-click the package;
+otherwise App Installer fails with `0x800B0109`. Once it is trusted, double-click
+`TranslucentTB-Lite-<version>-x64.msix`, or use PowerShell:
 
 ```powershell
 Add-AppxPackage .\TranslucentTB-Lite-<version>-x64.msix
 ```
+
+If double-clicking does nothing, right-click the `.msix` -> **Open with** -> **App Installer**,
+or use the command above.
 
 ### 3. Launch
 
@@ -129,16 +125,22 @@ If the app asks to restart Windows after an update, Explorer was still holding
 
 **MSIX 版（需要管理员一次）**
 
-> 如果你之前用 Visual Studio F5 部署过旧开发包（或装过同版本的开发包），先执行
-> `Get-AppxPackage TranslucentTB | Remove-AppxPackage`。从 Release 正常安装的用户**不需要**这一步。
+> ⚠️ **必须先完成第 1 步安装证书，再双击 `.msix`。** 证书还没装进「本地计算机 → 受信任的根证书颁发机构」时，双击会直接失败（`0x800B0109`，提示证书不受信任）。
+>
+> 只有你之前用 Visual Studio F5 部署过旧开发包（或装过同版本的开发包）时，才需要先执行
+> `Get-AppxPackage TranslucentTB | Remove-AppxPackage`；从 Release 正常安装的用户**不需要**这一步。
 
 1. 以管理员打开 PowerShell，执行：
    ```powershell
    certutil -addstore -f Root .\TranslucentTB-Lite.cer
    certutil -addstore -f TrustedPeople .\TranslucentTB-Lite.cer
    ```
-2. 双击 `.msix`，或执行 `Add-AppxPackage .\TranslucentTB-Lite-<版本>-x64.msix`；
+   或者双击 `.cer` → 安装证书 → **本地计算机** → **受信任的根证书颁发机构**。
+2. 证书装好后，双击 `.msix`，Windows 会打开「应用安装程序」，点**安装**。
+   如果双击没有反应，用命令安装：
+   ```powershell
+   Add-AppxPackage .\TranslucentTB-Lite-<版本>-x64.msix
+   ```
 3. 从开始菜单启动 **TranslucentTB Lite**。
 
-常见错误：`0x800B0109` 是证书没装进「本地计算机 → 受信任的根证书颁发机构」；
-`0x80073D06` 是旧包没卸载。不要同时运行官方版，它们共用托盘 GUID 和单实例互斥。
+常见错误：`0x800B0109` = 证书没装好，回到第 1 步；`0x80073D06` = 有旧开发包残留，先卸载。不要同时运行官方版，它们共用托盘 GUID 和单实例互斥。
