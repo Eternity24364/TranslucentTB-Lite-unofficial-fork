@@ -39,10 +39,10 @@ public:
 	// Appearances
 	TaskbarAppearance DesktopAppearance = { ACCENT_ENABLE_TRANSPARENTGRADIENT, { 0, 0, 0, 0 }, false, false, 9.0f };
 	RuledTaskbarAppearance VisibleWindowAppearance = { {}, {}, {}, false, ACCENT_ENABLE_TRANSPARENTGRADIENT, { 0, 0, 0, 0 }, true, false, 9.0f };
-	RuledTaskbarAppearance MaximisedWindowAppearance = { {}, {}, {}, false, ACCENT_ENABLE_ACRYLICBLURBEHIND, { 0, 0, 0, 0 }, true, true, 9.0f };
+	RuledTaskbarAppearance MaximisedWindowAppearance = { {},{},{}, true, ACCENT_ENABLE_ACRYLICBLURBEHIND,{ 0, 0, 0, 0 }, true, false, 9.0f };
 	OptionalTaskbarAppearance StartOpenedAppearance = { !IsWindows11(), ACCENT_NORMAL, { 0, 0, 0, 0 }, true, true, 9.0f };
 	OptionalTaskbarAppearance SearchOpenedAppearance = { !IsWindows11(), ACCENT_NORMAL, { 0, 0, 0, 0 }, true, true, 9.0f };
-	OptionalTaskbarAppearance TaskViewOpenedAppearance = { true, ACCENT_NORMAL, { 0, 0, 0, 0 }, false, true, 9.0f };
+	OptionalTaskbarAppearance TaskViewOpenedAppearance = { true, ACCENT_ENABLE_TRANSPARENTGRADIENT,{ 0, 0, 0, 0 }, false, false, 9.0f };
 	OptionalTaskbarAppearance BatterySaverAppearance = { false, ACCENT_ENABLE_GRADIENT, { 0, 0, 0, 0 }, true, false, 9.0f };
 
 	// Advanced
