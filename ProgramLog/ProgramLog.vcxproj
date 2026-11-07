@@ -37,7 +37,6 @@
     <ClInclude Include="api.h" />
     <ClInclude Include="error\errno.hpp" />
     <ClInclude Include="error\error.hpp" />
-    <ClInclude Include="error\rapidjson.hpp" />
     <ClInclude Include="error\std.hpp" />
     <ClInclude Include="error\win32.hpp" />
     <ClInclude Include="error\winrt.hpp" />

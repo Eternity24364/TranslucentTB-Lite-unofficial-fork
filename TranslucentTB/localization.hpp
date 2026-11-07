@@ -9,8 +9,6 @@
 #include "windows/window.hpp"
 
 namespace Localization {
-	bool SetProcessLangOverride(std::wstring_view langOverride);
-
 	Util::null_terminated_wstring_view LoadLocalizedResourceString(uint16_t resource, HINSTANCE hInst = wil::GetModuleInstanceHandle(), WORD lang = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
 
 	std::thread ShowLocalizedMessageBox(uint16_t resource, UINT type, HINSTANCE hInst = wil::GetModuleInstanceHandle(), WORD lang = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));

@@ -113,21 +113,12 @@
 
   <ItemDefinitionGroup Condition="'$(Platform)'=='x64'">
     <ClCompile>
-      <!-- SSE2 is always available on x64 -->
-      <PreprocessorDefinitions>RAPIDJSON_SSE2;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <IntelJCCErratum>true</IntelJCCErratum>
       <GuardEHContMetadata>true</GuardEHContMetadata>
     </ClCompile>
     <Link>
       <CETCompat Condition="'$(Configuration)'=='Release'">true</CETCompat>
     </Link>
-  </ItemDefinitionGroup>
-
-  <ItemDefinitionGroup Condition="'$(Platform)'=='ARM64'">
-    <ClCompile>
-      <!-- Windows requires NEON on any ARM64 processor, see https://docs.microsoft.com/en-us/cpp/build/arm64-windows-abi-conventions -->
-      <PreprocessorDefinitions>RAPIDJSON_NEON;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
   </ItemDefinitionGroup>
 
   <ItemDefinitionGroup Condition="'$(SkipSigning)'!='True' And ('$(CertificateThumbprint)'!='' Or '$(TrustedSigningMetadata)'!='')">
@@ -172,9 +163,6 @@
       <DiagnosticsFormat>Caret</DiagnosticsFormat>
       <UseFullPaths>true</UseFullPaths>
 
-      <!-- RapidJSON -->
-      <PreprocessorDefinitions>RAPIDJSON_HAS_STDSTRING=1;RAPIDJSON_ERROR_CHARTYPE=wchar_t;RAPIDJSON_ERROR_STRING=UTIL_WIDEN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-
       <!-- member_thunk -->
       <PreprocessorDefinitions>MEMBER_THUNK_DEFAULT_HEAP_SAFETY=3;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 
@@ -209,13 +197,4 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="RemoveWebView2" BeforeTargets="ResolveAssemblyReferences">
-    <ItemGroup>
-      <_WebView2Reference Include="@(Reference)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Core'" />
-      <Reference Remove="@(_WebView2Reference)" />
-      <Reference Include="@(_WebView2Reference)" RemoveMetadata="Implementation" />
-
-      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" Condition="'%(Filename)' == 'Microsoft.Web.WebView2.Core'" />
-    </ItemGroup>
-  </Target>
 </Project>

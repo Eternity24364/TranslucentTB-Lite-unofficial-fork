@@ -28,7 +28,6 @@
 enum class TaskbarType {
 	Unknown,
 	Classic, // Windows 10
-	Mixed,   // Windows 11 22000 and early 22621
 	XAML     // Windows 11 22621+
 };
 
@@ -40,8 +39,6 @@ private:
 	struct TaskbarInfo {
 		Window TaskbarWindow;
 		Window PeekWindow;
-		Window InnerXamlContent;
-		Window WorkerWWindow;
 	};
 
 	struct MonitorInfo {
@@ -141,7 +138,6 @@ private:
 
 	// Attribute
 	void ShowAeroPeekButton(const TaskbarInfo &taskbar, bool show);
-	void ShowTaskbarLine(const TaskbarInfo &taskbar, bool show);
 	void SetAttribute(taskbar_iterator taskbar, TaskbarAppearance config);
 	void RefreshAttribute(taskbar_iterator taskbar);
 	void RefreshAllAttributes();
@@ -167,7 +163,6 @@ private:
 	void ReturnToStock();
 	void InsertTaskbar(HMONITOR mon, Window window);
 	static BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData);
-	static BOOL CALLBACK WindowEnumProc(HWND hwnd, LPARAM lParam);
 	static HMONITOR GetTaskbarMonitor(Window taskbar);
 	static TaskbarType GetTaskbarType(Window taskbar);
 

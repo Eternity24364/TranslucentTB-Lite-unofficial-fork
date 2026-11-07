@@ -53,26 +53,7 @@ public:
 		return fn;
 	}
 
-	// Used in Application constructor
-	inline PFN_SET_PREFERRED_APP_MODE SetPreferredAppMode() const
-	{
-		if (m_UxTheme)
-		{
-			const auto fn = reinterpret_cast<PFN_SET_PREFERRED_APP_MODE>(GetProcAddress(m_UxTheme.get(), MAKEINTRESOURCEA(135)));
-			if (!fn) [[unlikely]]
-			{
-				LastErrorHandle(spdlog::level::warn, L"Failed to get address of SetPreferredAppMode");
-			}
-
-			return fn;
-		}
-		else
-		{
-			return nullptr;
-		}
-	}
-
-	// Used in TrayContextMenu constructor, but only 1 TrayContextMenu instance
+	// Used in MainAppWindow constructor, but only 1 instance
 	inline PFN_ALLOW_DARK_MODE_FOR_WINDOW AllowDarkModeForWindow() const
 	{
 		if (m_UxTheme)

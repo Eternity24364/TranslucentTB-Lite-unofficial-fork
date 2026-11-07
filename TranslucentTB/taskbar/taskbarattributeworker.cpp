@@ -286,45 +286,6 @@ void TaskbarAttributeWorker::ShowAeroPeekButton(const TaskbarInfo &taskbar, bool
 	}
 }
 
-void TaskbarAttributeWorker::ShowTaskbarLine(const TaskbarInfo &taskbar, bool show)
-{
-	if (auto workerW = taskbar.WorkerWWindow)
-	{
-		workerW.show(show ? SW_SHOWNA : SW_HIDE);
-	}
-	else if (taskbar.InnerXamlContent)
-	{
-		if (show)
-		{
-			if (auto rect = taskbar.InnerXamlContent.client_rect())
-			{
-				const float scaleFactor = static_cast<float>(GetDpiForWindow(taskbar.InnerXamlContent)) / USER_DEFAULT_SCREEN_DPI;
-
-				// bottom taskbar is the only available option in Windows 11 22000.
-				rect->top += std::lround(1.0f * scaleFactor);
-				if (wil::unique_hrgn rgn { CreateRectRgnIndirect(&*rect) })
-				{
-					if (SetWindowRgn(taskbar.InnerXamlContent, rgn.get(), true))
-					{
-						rgn.release();
-					}
-					else
-					{
-						LastErrorHandle(spdlog::level::warn, L"Failed to set region of inner XAML window");
-					}
-				}
-			}
-		}
-		else
-		{
-			if (!SetWindowRgn(taskbar.InnerXamlContent, nullptr, true)) [[unlikely]]
-			{
-				LastErrorHandle(spdlog::level::info, L"Failed to clear window region of inner taskbar XAML");
-			}
-		}
-	}
-}
-
 void TaskbarAttributeWorker::SetAttribute(taskbar_iterator taskbar, TaskbarAppearance config)
 {
 	if (m_TaskbarService)
@@ -409,10 +370,6 @@ void TaskbarAttributeWorker::RefreshAttribute(taskbar_iterator taskbar)
 	if (m_TaskbarService)
 	{
 		HresultVerify(m_TaskbarService->SetTaskbarBorderVisibility(taskbarInfo.TaskbarWindow, cfg.ShowLine), spdlog::level::info, L"Failed to set taskbar border visibility");
-	}
-	else if (taskbarInfo.InnerXamlContent || taskbarInfo.WorkerWWindow)
-	{
-		ShowTaskbarLine(taskbarInfo, cfg.ShowLine);
 	}
 	else if (taskbarInfo.PeekWindow)
 	{
@@ -654,11 +611,7 @@ void TaskbarAttributeWorker::ReturnToStock()
 
 		for (const auto& taskbarInfo : taskbarInfos)
 		{
-			if (taskbarInfo.InnerXamlContent || taskbarInfo.WorkerWWindow)
-			{
-				ShowTaskbarLine(taskbarInfo, true);
-			}
-			else if (taskbarInfo.PeekWindow)
+			if (taskbarInfo.PeekWindow)
 			{
 				ShowAeroPeekButton(taskbarInfo, true);
 			}
@@ -669,12 +622,7 @@ void TaskbarAttributeWorker::ReturnToStock()
 void TaskbarAttributeWorker::InsertTaskbar(HMONITOR mon, Window window)
 {
 	TaskbarInfo taskbarInfo = { .TaskbarWindow = window };
-	if (m_TaskbarType == TaskbarType::Mixed)
-	{
-		taskbarInfo.WorkerWWindow = window.find_child(L"WorkerW"); // early 22621
-		taskbarInfo.InnerXamlContent = window.find_child(L"Windows.UI.Composition.DesktopWindowContentBridge", L"DesktopWindowXamlSource"); // 22000
-	}
-	else if (m_TaskbarType == TaskbarType::Classic)
+	if (m_TaskbarType == TaskbarType::Classic)
 	{
 		taskbarInfo.PeekWindow = window.find_child(L"TrayNotifyWnd").find_child(L"TrayShowDesktopButtonWClass");
 	}
@@ -711,18 +659,6 @@ BOOL TaskbarAttributeWorker::MonitorEnumProc(HMONITOR hMonitor, HDC, LPRECT lprc
 
 			return false;
 		}
-	}
-
-	return true;
-}
-
-BOOL TaskbarAttributeWorker::WindowEnumProc(HWND hwnd, LPARAM lParam)
-{
-	Window window(hwnd);
-	if (window.classname() == L"Windows.UI.Composition.DesktopWindowContentBridge" && window.title() == L"DesktopWindowXamlSource")
-	{
-		auto islandsCount = reinterpret_cast<uint32_t*>(lParam);
-		++(*islandsCount);
 	}
 
 	return true;
@@ -775,27 +711,7 @@ TaskbarType TaskbarAttributeWorker::GetTaskbarType(Window taskbar)
 
 	snapshot.reset();
 
-	if (hasTaskbarDll)
-	{
-		uint32_t islandsCount = 0;
-		EnumChildWindows(taskbar, WindowEnumProc, reinterpret_cast<LPARAM>(&islandsCount));
-		if (islandsCount == 2)
-		{
-			return TaskbarType::Mixed;
-		}
-		else if (islandsCount == 1)
-		{
-			return TaskbarType::XAML;
-		}
-		else
-		{
-			return TaskbarType::Unknown;
-		}
-	}
-	else
-	{
-		return TaskbarType::Classic;
-	}
+	return hasTaskbarDll ? TaskbarType::XAML : TaskbarType::Classic;
 }
 
 TaskbarAttributeWorker::TaskbarAttributeWorker(HINSTANCE hInstance, DynamicLoader &loader, const std::optional<std::filesystem::path> &storageFolder) :
