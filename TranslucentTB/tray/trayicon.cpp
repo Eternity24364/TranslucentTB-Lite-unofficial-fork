@@ -126,7 +126,7 @@ TrayIcon::TrayIcon(const GUID &iconId, const wchar_t *whiteIconResource,
 		.hWnd = m_WindowHandle,
 		.uFlags = NIF_MESSAGE | NIF_TIP,
 		.uCallbackMessage = TRAY_CALLBACK,
-		.szTip = APP_NAME,
+		.szTip = APP_DISPLAY_NAME,
 		.uVersion = NOTIFYICON_VERSION_4
 	},
 	m_whiteIconResource(whiteIconResource),

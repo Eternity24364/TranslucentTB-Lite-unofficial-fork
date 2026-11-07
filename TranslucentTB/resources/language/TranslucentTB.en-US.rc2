@@ -31,15 +31,15 @@ VS_VERSION_INFO VERSIONINFO
 	{
 		BLOCK L"040904b0"
 		{
-			VALUE L"FileDescription", APP_NAME
+			VALUE L"FileDescription", APP_DISPLAY_NAME
 			VALUE L"FileVersion", APP_VERSION
 			VALUE L"InternalName", APP_NAME L".exe"
 			VALUE L"OriginalFilename", APP_NAME L".exe"
-			VALUE L"ProductName", APP_NAME
+			VALUE L"ProductName", APP_DISPLAY_NAME
 			VALUE L"ProductVersion", APP_VERSION
 			VALUE L"Comments", L"A lightweight utility that makes the Windows taskbar translucent/transparent."
-			VALUE L"CompanyName", APP_NAME L" Open Source Developers"
-			VALUE L"LegalCopyright", L"Copyright © " APP_COPYRIGHT_YEAR L" " APP_NAME L" Open Source Developers"
+			VALUE L"CompanyName", L"TranslucentTB Open Source Developers"
+			VALUE L"LegalCopyright", L"Copyright © " APP_COPYRIGHT_YEAR L" TranslucentTB Open Source Developers; modifications © 2026 TranslucentTB Lite contributors"
 		}
 	}
 	BLOCK L"VarFileInfo"
@@ -56,8 +56,8 @@ VS_VERSION_INFO VERSIONINFO
 
 STRINGTABLE
 {
-	IDS_ALREADY_RUNNING APP_NAME L" is already running! Right-click on the tray icon to access it."
-	IDS_RESTART_REQUIRED APP_NAME L" was recently updated. Please restart Windows to start using the latest version."
-	IDS_EXPLORER_RESTARTED_TOO_MUCH L"Windows Explorer restarted twice in the last 30 seconds! This may be a conflict between " APP_NAME " and other shell customization software, or a Windows Update. To avoid further issues, " APP_NAME " will now exit."
+	IDS_ALREADY_RUNNING APP_DISPLAY_NAME L" is already running! Right-click on the tray icon to access it."
+	IDS_RESTART_REQUIRED APP_DISPLAY_NAME L" was recently updated. Please restart Windows to start using the latest version."
+	IDS_EXPLORER_RESTARTED_TOO_MUCH L"Windows Explorer restarted twice in the last 30 seconds! This may be a conflict between " APP_DISPLAY_NAME " and other shell customization software, or a Windows Update. To avoid further issues, " APP_DISPLAY_NAME " will now exit."
 	IDS_EXIT L"Exit"
 }

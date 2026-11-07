@@ -1,91 +1,132 @@
-﻿# TranslucentTB
+# TranslucentTB Lite (unofficial fork)
 
-[![Liberapay patrons](https://img.shields.io/liberapay/patrons/TranslucentTB.svg)](https://liberapay.com/TranslucentTB/)
-[![Join on Discord](https://discordapp.com/api/guilds/304387206552879116/widget.png?style=shield)][Discord]
-[![Build Status](https://dev.azure.com/TranslucentTB/TranslucentTB/_apis/build/status%2FContinuous%20Integration%20Builds?branchName=develop)](https://dev.azure.com/TranslucentTB/TranslucentTB/_build)
-[![CodeFactor](https://www.codefactor.io/repository/github/translucenttb/translucenttb/badge/develop)](https://www.codefactor.io/repository/github/translucenttb/translucenttb/overview/develop)
+> **This is an unofficial, stripped-down fork of [TranslucentTB](https://github.com/TranslucentTB/TranslucentTB).**
+> It is **not affiliated with, sponsored by, or endorsed by** the TranslucentTB project or its authors.
+> "TranslucentTB" is used only to describe where this code comes from.
 
-![Microsoft Store App Awards 2022 - Community Choice Award: Open Platform (runner up)](https://user-images.githubusercontent.com/6440374/180880766-4380b2cf-4d9e-4d07-8986-a9b34cb6244a.png#gh-dark-mode-only)![Microsoft Store App Awards 2022 - Community Choice Award: Open Platform (runner up)](https://user-images.githubusercontent.com/6440374/180880839-355c472c-0b7a-4aae-88e5-0234001cb281.png#gh-light-mode-only)
+A minimal, non-configurable build of TranslucentTB: the taskbar is transparent on the
+desktop, acrylic when a window is maximized, transparent while Task View is open, and the
+taskbar line is always hidden. There is no settings UI and no `settings.json` — everything
+is fixed at build time.
 
-A lightweight (uses a few MB of RAM and almost no CPU) utility that makes the Windows taskbar translucent/transparent on Windows 10 and Windows 11.
+## Behavior
 
-## Features
+| Situation | Appearance |
+|---|---|
+| Desktop / normal windows | transparent |
+| A window is maximized | acrylic |
+| Task View is open | transparent |
+| Taskbar line | always hidden |
 
-- Advanced **color picker** supporting alpha and live preview to change the taskbar's color.
-- **Taskbar states** (choose one - color can be customized on every state except Normal):
-  - **Normal**: Regular Windows style. (as if TranslucentTB was not running)
-  - **Opaque**: Tinted taskbar, without transparency.
-  - **Clear**: Tinted taskbar.
-  - **Blur**: Will make the taskbar slightly blurred. Windows 10 and Windows 11 build 22000 only.
-  - **Acrylic**: Will give the taskbar an appearance similar to Microsoft's Fluent Design guidelines.
-- **Dynamic** modes (these can be used together and each of them provides a taskbar state and color you can customize):
-  - **Visible window**: Will change the taskbar to a different appearance if a window is currently open on the desktop.
-  - **Maximized window**: Will change the taskbar to a different appearance if a window is currently maximised.
-  - **Start opened**: Will change the taskbar appearance when the start menu is opened.
-  - **Search opened**: Will change the taskbar appearance when the search menu (previously Cortana) is open.
-  - **Task View opened**: Will change the taskbar apperance when the Task View (previously Timeline) is open.
-- On Windows 10, ability to **show or hide the Aero Peek button** depending on the currently active dynamic mode.
-- On Windows 11, ability to **show or hide the taskbar line** depending on the currently active dynamic mode.
-- Compatible with [RoundedTB](https://github.com/torchgm/RoundedTB)!
-- Compatible with [ExplorerPatcher](https://github.com/valinet/ExplorerPatcher)!
+- Tray menu: a classic Win32 menu with a single **Exit** item.
+- Open at boot: enabled through the package manifest (`StartupTask`); there is no toggle.
+- Logging: file log at `warn` level only.
+- Reset hotkey: `Ctrl+Alt+Shift+F1` re-initializes the taskbar state (useful after shell glitches).
+- Languages: en-US and zh-CN.
+- Supported systems: Windows 10 (classic taskbar) and Windows 11 22621+. Windows 11 21H2
+  (build 22000) is **not** supported by this fork.
 
-## Screenshots
+## Removed compared to upstream
 
-<img src="https://i.imgur.com/QbG7KQA.png" alt="windows 11 acrylic" width="243"> <img src="https://i.imgur.com/zabZ52s.png" alt="windows 11 clear" width="243">
+- all appearance options (color picker, peek/line toggles, per-state accent selection)
+- start menu, search and battery saver appearances
+- per-window rules and the ignored-windows list
+- `settings.json`, hot reload, the welcome page, the advanced/log-level tray menu
+- the whole WinUI/XAML tray flyout (`Xaml` project) and the Microsoft.UI.Xaml dependency
+- the Windows 11 21H2 taskbar code path
+- all languages except en-US and zh-CN
 
-![windows 10 acrylic](https://i.imgur.com/M15IPJW.png) ![windows 10 clear](https://i.imgur.com/eLGTtwp.png) ![windows 10 blur](https://i.imgur.com/r4ZJjnL.png)
+## Build
 
-## Download
+Requirements:
 
-[<img src="https://get.microsoft.com/images/en-us%20dark.svg" alt="Get it from Microsoft" height="104">](https://apps.microsoft.com/store/detail/9PF4KZ2VN4W9)
+- Visual Studio 2026 with the Desktop C++ workload, the Windows application packaging
+  (UWP/MSIX) tooling, and the Windows 11 SDK (10.0.26100)
+- C++/WinRT, NuGet and vcpkg (restored automatically by the build)
+- x64 Windows 10 1809+ / Windows 11
 
-You can download the program for free from the [Microsoft Store](https://www.microsoft.com/store/apps/9PF4KZ2VN4W9) and take advantage of its features like background auto-updates.
+Open [TranslucentTB.slnx](TranslucentTB.slnx), select **Release | x64**, build the
+`AppPackage` project and deploy (F5). The build produces the MSIX under
+`AppPackage/AppPackages/` and a loose layout under `AppPackage/bin/x64/Release/AppX`.
 
-Alternatively, you can download `TranslucentTB.appinstaller` [via the releases tab](https://github.com/TranslucentTB/TranslucentTB/releases) and open it to install the app.
+Command line equivalent:
 
-A portable version of the app is also available [on GitHub releases](https://github.com/TranslucentTB/TranslucentTB/releases) as `TranslucentTB.zip`, but this version only works on Windows 11.
-
-If you want to get the latest bleeding edge build, you can grab it over at the [Azure Pipelines page](https://dev.azure.com/sylve0n/TranslucentTB/_build?definitionId=4). Note that these builds may not work, or include features that are partially complete. Use at your own risk.
-
-## Add to Startup
-
-To add TranslucentTB to startup, check the "Open at boot" entry in the TranslucentTB tray icon's context menu. If you are having issues or the entry in the context menu is grayed out, try applying the following registry changes:
-```reg
-Windows Registry Editor Version 5.00
-
-[HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System]
-"EnableFullTrustStartupTasks"=dword:00000002
-"EnableUwpStartupTasks"=dword:00000002
-"SupportFullTrustStartupTasks"=dword:00000001
-"SupportUwpStartupTasks"=dword:00000001
+```powershell
+msbuild TranslucentTB.slnx /m /p:Configuration=Release /p:Platform=x64
 ```
 
-Portable versions can be added to startup by creating a shortcut to the executable in `%AppData%\Microsoft\Windows\Start Menu\Programs\Startup`.
+If your Visual Studio installation has no UWP workload, the `WindowsUdk` project cannot be
+built; install the "Windows application packaging" / UWP build tools first.
 
-## Donations and contributions
+## Running and updating
 
-[We have a Liberapay!](https://liberapay.com/TranslucentTB/) Don't hesitate to donate if you appreciate TranslucentTB and would like to support our work.
+- The package identity, publisher identity, tray icon GUID and single-instance mutex are
+  **unchanged from upstream**. Do not install this build alongside the official
+  TranslucentTB (or another copy of this fork); they will fight over the same taskbar and
+  tray icon.
+- When the app is updated while Explorer already has `ExplorerTAP.dll` loaded, Windows
+  cannot replace the copy in the package's `TempState` folder and the app asks for a
+  restart. Restart `explorer.exe` (or Windows) and start the app again.
+- Logs are written to
+  `%LOCALAPPDATA%\Packages\TranslucentTB_99myrp4edc0yc\TempState\<process-start-time>.log`
+  and only contain warnings/errors.
 
-If you want to contribute to the source code, we have [a how-to contribute guide](CONTRIBUTING.md).
+## Naming, icons and trademarks
 
-## Security
+- The name **TranslucentTB**, its icons, the tray icons and the Store artwork are taken
+  from the upstream project and remain the property of their respective authors. They are
+  used here only to describe the origin of this fork.
+- This repository keeps the original icons and package artwork for now. If you redistribute
+  this fork more widely, replace them with your own artwork to avoid implying that this is
+  an official TranslucentTB release.
+- No trademark or name license is granted by the GPL; nothing in this repository should be
+  read as an endorsement by the upstream project.
 
-Some antiviruses are over eager, so they might flag this program as malicious. IT IS NOT! Over 10M users have downloaded this program safely. The source is open, you can [compile it yourself](CONTRIBUTING.md#building-from-source), and we welcome any and all security reviews.
+## Releases and signing
 
-## Thanks
+An MSIX package must be signed before Windows will install it outside Developer Mode.
+There are three practical options:
 
-TranslucentTB is a team effort! It is the result of the collective efforts of many people:
+1. **Portable ZIP (simplest, no signing).** Ship `TranslucentTB.exe` together with
+   `ExplorerHooks.dll`, `ExplorerTAP.dll` and `ProgramLog.dll`. Windows may show a
+   SmartScreen "unknown publisher" prompt; users choose *More info* -> *Run anyway*.
+   The tray icon and taskbar effects work; the MSIX startup task is not available in this
+   mode.
+2. **Self-signed MSIX (free).** Create a code-signing certificate, put its subject into
+   `Publisher` in [Package.appxmanifest](AppPackage/Package.appxmanifest), sign the package
+   with `signtool`, and tell users to trust your `.cer` first:
 
-- [@ethanhs](https://github.com/ethanhs),
-- [@sylveon](https://github.com/sylveon),
-- [@MrAksel](https://github.com/MrAksel),
-- [@denosawr](https://github.com/denosawr),
-- and last but not least, all of [our contributors](https://github.com/TranslucentTB/TranslucentTB/graphs/contributors)!
+   ```powershell
+   $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=Your Name" `
+       -KeyUsage DigitalSignature -FriendlyName "TranslucentTB Lite" `
+       -CertStoreLocation Cert:\CurrentUser\My `
+       -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3")
+   Export-PfxCertificate -Cert $cert -FilePath ttb-lite.pfx -Password (Read-Host -AsSecureString)
+   Export-Certificate  -Cert $cert -FilePath ttb-lite.cer
 
-Thanks to [@dAKirby309](https://github.com/dAKirby309) for making the icon! You can find more of his stuff on [his DeviantArt profile](https://dakirby309.deviantart.com/).
+   signtool sign /fd SHA256 /f ttb-lite.pfx /tr http://timestamp.digicert.com /td SHA256 `
+       AppPackage_1.0.0.0_x64.msix
+   ```
 
-### License
+   Users install the certificate once (double-click -> *Install Certificate* ->
+   *Local Machine* -> *Trusted People*), then can install the MSIX. The certificate must be
+   renewed when it expires; timestamping keeps old releases valid.
+3. **Commercial code-signing certificate (paid).** Removes the "unknown publisher" warning
+   entirely, but requires buying a certificate and keeping its private key in a hardware
+   token/HSM. `Publisher` must match the certificate subject.
 
-This program is free (as in speech) software under the GPLv3. Please see [the license file](LICENSE.md) for more.
+This repository currently keeps the upstream `Publisher` value, so it builds and runs via
+F5/Developer Mode but is not signed for distribution. Change `Publisher` to your own
+certificate subject before publishing a signed MSIX.
 
-[Discord]: https://discord.gg/TranslucentTB
+## License
+
+This fork is distributed under the **GNU General Public License v3.0**, the same license as
+the upstream project. See [LICENSE.md](LICENSE.md). Modified sources are covered by GPLv3
+as well; if you distribute binaries, the corresponding source is this repository.
+
+Upstream project: <https://github.com/TranslucentTB/TranslucentTB> (GPLv3).
+This fork is based on upstream commit `d4636e4` plus local changes.
+
+Third-party components and their licenses are listed in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

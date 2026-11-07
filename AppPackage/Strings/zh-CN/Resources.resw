@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -118,9 +118,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AppDescription" xml:space="preserve">
-    <value>一个能够使 Windows 任务栏半透明/透明的轻量小工具</value>
+    <value>TranslucentTB 的非官方精简分支，使 Windows 任务栏半透明/透明</value>
   </data>
   <data name="PublisherDisplayName" xml:space="preserve">
-    <value>TranslucentTB 开源开发者</value>
+    <value>TranslucentTB Lite（非官方分支）</value>
   </data>
 </root>

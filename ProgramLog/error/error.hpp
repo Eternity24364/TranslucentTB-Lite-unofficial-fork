@@ -9,7 +9,7 @@
 #include "appinfo.hpp"
 #include "util/null_terminated_string_view.hpp"
 
-#define UTF8_ERROR_TITLE UTF8_APP_NAME " " UTF8_APP_VERSION " - Error"
+#define UTF8_ERROR_TITLE UTF8_APP_DISPLAY_NAME " " UTF8_APP_VERSION " - Error"
 
 namespace Error {
 	namespace impl {

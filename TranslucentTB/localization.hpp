@@ -21,7 +21,7 @@ namespace Localization {
 
 		return std::thread([formatted_msg = std::move(formatted), type]() noexcept
 		{
-			MessageBoxEx(Window::NullWindow, formatted_msg.c_str(), APP_NAME, type, MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
+			MessageBoxEx(Window::NullWindow, formatted_msg.c_str(), APP_DISPLAY_NAME, type, MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
 		});
 	}
 
@@ -32,7 +32,7 @@ namespace Localization {
 
 		return std::thread([msg, type, callback = std::forward<Callback>(callback)]() mutable noexcept(std::is_nothrow_invocable_v<Callback, int>)
 		{
-			const int ret = MessageBoxEx(Window::NullWindow, msg.c_str(), APP_NAME, type, MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
+			const int ret = MessageBoxEx(Window::NullWindow, msg.c_str(), APP_DISPLAY_NAME, type, MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL));
 			std::invoke(std::forward<Callback>(callback), ret);
 		});
 	}

@@ -78,6 +78,6 @@ std::thread Localization::ShowLocalizedMessageBox(uint16_t resource, UINT type, 
 
 	return std::thread([msg, type, lang]() noexcept
 	{
-		MessageBoxEx(Window::NullWindow, msg.c_str(), APP_NAME, type, lang);
+		MessageBoxEx(Window::NullWindow, msg.c_str(), APP_DISPLAY_NAME, type, lang);
 	});
 }
