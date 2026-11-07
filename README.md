@@ -36,6 +36,19 @@ is fixed at build time.
 - the Windows 11 21H2 taskbar code path
 - all languages except en-US and zh-CN
 
+## Install
+
+Download the latest ZIP or MSIX from the [Releases page](../../releases). Step-by-step
+instructions for both builds (including the one-time certificate trust required by the
+MSIX) are in [INSTALL.md](INSTALL.md).
+
+Quick version:
+
+- **Portable:** extract the ZIP and run `TranslucentTB.exe`. No admin rights needed.
+- **MSIX:** trust `TranslucentTB-Lite.cer` in *Local Machine -> Trusted Root Certification
+  Authorities* (administrator), then install the `.msix`. See [INSTALL.md](INSTALL.md) for
+  the exact commands.
+
 ## Build
 
 Requirements:
