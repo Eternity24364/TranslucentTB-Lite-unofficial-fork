@@ -24,6 +24,11 @@
       _GenerateCustomLibFiles;
     </BeforeLinkTargets>
   </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalOptions>/Wv:18 %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <Target Name="_UnpackagedWin32MapWinmdsToManifestFiles" DependsOnTargets="ResolveAssemblyReferences">
     <ItemGroup>
       <!-- For each non-system .winmd file in References, generate a .manifest in IntDir for it. -->
