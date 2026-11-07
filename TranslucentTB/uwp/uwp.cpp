@@ -1,14 +1,10 @@
 #include "uwp.hpp"
 #include <Windows.h>
 #include <appmodel.h>
-#include <CoreWindow.h>
 #include <ShlObj_core.h>
 #include <wil/resource.h>
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.UI.Core.h>
 
 #include "../ProgramLog/error/win32.hpp"
-#include "../ProgramLog/error/winrt.hpp"
 
 std::optional<std::wstring> UWP::GetPackageFamilyName()
 {
@@ -99,51 +95,3 @@ std::optional<std::filesystem::path> UWP::GetAppStorageFolder()
 		return std::nullopt;
 	}
 }
-
-winrt::fire_and_forget UWP::OpenUri(const wf::Uri &uri)
-{
-	bool opened;
-	try
-	{
-		opened = co_await winrt::Windows::System::Launcher::LaunchUriAsync(uri);
-	}
-	catch (const winrt::hresult_error &err)
-	{
-		HresultErrorHandle(err, spdlog::level::err, L"Failed to launch uri.");
-		co_return;
-	}
-
-	if (!opened)
-	{
-		MessagePrint(spdlog::level::err, L"Uri was not launched.");
-	}
-}
-
-Window UWP::GetCoreWindow()
-{
-	Window coreWin;
-	try
-	{
-		const auto coreInterop = winrt::Windows::UI::Core::CoreWindow::GetForCurrentThread().as<ICoreWindowInterop>();
-		winrt::check_hresult(coreInterop->get_WindowHandle(coreWin.put()));
-	}
-	HresultErrorCatch(spdlog::level::warn, L"Failed to get core window handle");
-
-	return coreWin;
-}
-
-void UWP::HideCoreWindow()
-{
-	if (auto coreWin = GetCoreWindow())
-	{
-		coreWin.show(SW_HIDE);
-	}
-}
-
-wuxh::WindowsXamlManager UWP::CreateXamlManager() try
-{
-	const auto manager = wuxh::WindowsXamlManager::InitializeForCurrentThread();
-	HideCoreWindow();
-	return manager;
-}
-HresultErrorCatch(spdlog::level::critical, L"Failed to create Xaml manager");

@@ -5,7 +5,6 @@
   <Import Project="..\packages\Microsoft.Windows.SDK.CPP.10.0.26100.7463\build\native\Microsoft.Windows.SDK.cpp.props" Condition="Exists('..\packages\Microsoft.Windows.SDK.CPP.10.0.26100.7463\build\native\Microsoft.Windows.SDK.cpp.props')" />
   <Import Project="..\packages\Microsoft.Windows.SDK.BuildTools.10.0.26100.7463\build\Microsoft.Windows.SDK.BuildTools.props" Condition="Exists('..\packages\Microsoft.Windows.SDK.BuildTools.10.0.26100.7463\build\Microsoft.Windows.SDK.BuildTools.props')" />
   <Import Project="..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props')" />
-  <Import Project="..\packages\Microsoft.UI.Xaml.2.8.7\build\native\Microsoft.UI.Xaml.props" Condition="Exists('..\packages\Microsoft.UI.Xaml.2.8.7\build\native\Microsoft.UI.Xaml.props')" />
   <Import Project="..\packages\Microsoft.Trusted.Signing.Client.1.0.95\build\Microsoft.Trusted.Signing.Client.props" Condition="Exists('..\packages\Microsoft.Trusted.Signing.Client.1.0.95\build\Microsoft.Trusted.Signing.Client.props')" />
   <Import Project="..\packages\Microsoft.SourceLink.GitHub.8.0.0\build\Microsoft.SourceLink.GitHub.props" Condition="Exists('..\packages\Microsoft.SourceLink.GitHub.8.0.0\build\Microsoft.SourceLink.GitHub.props')" />
   <Import Project="..\packages\Microsoft.SourceLink.Common.8.0.0\build\Microsoft.SourceLink.Common.props" Condition="Exists('..\packages\Microsoft.SourceLink.Common.8.0.0\build\Microsoft.SourceLink.Common.props')" />
@@ -21,7 +20,6 @@
     <BeforeLinkTargets>
       $(BeforeLinkTargets);
       _UnpackagedWin32GenerateAdditionalWinmdManifests;
-      _GenerateCustomLibFiles;
     </BeforeLinkTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -59,26 +57,13 @@
       <Manifest Include="@(_UnpackagedWin32WinmdManifest)" KeepMetadata="DoesntExist" />
     </ItemGroup>
   </Target>
-  <Target Name="_GenerateCustomLibFiles" Inputs="@(CustomDefFile.FullPath)" Outputs="$(IntDir)@(CustomDefFile.Filename).lib">
-    <Message Text="Generating lib file for %(CustomDefFile.Filename)%(CustomDefFile.Extension)" Importance="High" />
-    <!-- This target is batched and a new Exec is spawned for each entry in CustomDefFile. -->
-    <Exec Command="lib.exe /DEF:&quot;%(CustomDefFile.FullPath)&quot; /OUT:&quot;$(IntDir)%(CustomDefFile.Filename).lib&quot; /MACHINE:$(PlatformTarget) /NOLOGO" />
-    <ItemGroup>
-      <!--
-          Emit the generated lib files into the Link inputs.
-          Pass a metadata name that isn't used to wipe all metadata.
-      -->
-      <Library Include="$(IntDir)%(CustomDefFile.Filename).lib" KeepMetadata="DoesntExist" />
-    </ItemGroup>
-  </Target>
   <ItemDefinitionGroup Label="Globals">
     <ClCompile>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);..\ExplorerTAP\Generated Files\$(Platform)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_TRANSLUCENTTB_EXE;WINRT_NO_MODULE_LOCK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WINRT_NO_MODULE_LOCK;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>advapi32.lib;comctl32.lib;coremessaging.lib;delayimp.lib;dwmapi.lib;gdi32.lib;mincore.lib;ole32.lib;pathcch.lib;runtimeobject.lib;shcore.lib;shell32.lib;shlwapi.lib;user32.lib;onecore.lib</AdditionalDependencies>
-      <DelayLoadDLLs>api-ms-win-appmodel-runtime-l1-1-5.dll</DelayLoadDLLs>
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
@@ -86,21 +71,12 @@
     <ClCompile Include="application.cpp" />
     <ClCompile Include="loadabledll.cpp" />
     <ClCompile Include="localization.cpp" />
-    <ClCompile Include="managers\configmanager.cpp" />
-    <ClCompile Include="folderwatcher.cpp" />
     <ClCompile Include="mainappwindow.cpp" />
-    <ClCompile Include="managers\startupmanager.cpp" />
     <ClCompile Include="taskbar\taskbarattributeworker.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="tray\basecontextmenu.cpp" />
-    <ClCompile Include="uwp\basexamlpagehost.cpp" />
-    <ClCompile Include="uwp\dynamicdependency.cpp" />
-    <ClCompile Include="uwp\xamldragregion.cpp" />
-    <ClCompile Include="uwp\xamlthreadpool.cpp" />
-    <ClCompile Include="uwp\xamlthread.cpp" />
-    <ClCompile Include="windows\messagewindow.cpp" />
     <ClCompile Include="tray\trayicon.cpp" />
     <ClCompile Include="uwp\uwp.cpp" />
+    <ClCompile Include="windows\messagewindow.cpp" />
     <ClCompile Include="windows\window.cpp" />
     <ClCompile Include="windows\windowclass.cpp" />
   </ItemGroup>
@@ -109,40 +85,18 @@
     <ClInclude Include="dynamicloader.hpp" />
     <ClInclude Include="loadabledll.hpp" />
     <ClInclude Include="localization.hpp" />
-    <ClInclude Include="managers\configmanager.hpp" />
-    <ClInclude Include="folderwatcher.hpp" />
     <ClInclude Include="mainappwindow.hpp" />
-    <ClInclude Include="managers\startupmanager.hpp" />
-    <ClInclude Include="taskbar\launchervisibilitysink.hpp" />
-    <ClInclude Include="tray\basecontextmenu.hpp" />
-    <ClInclude Include="tray\traycontextmenu.hpp" />
+    <ClInclude Include="tray\trayicon.hpp" />
     <ClInclude Include="taskbar\taskbarattributeworker.hpp" />
-    <ClInclude Include="uwp\basexamlpagehost.hpp" />
-    <ClInclude Include="uwp\dynamicdependency.hpp" />
-    <ClInclude Include="uwp\xamldragregion.hpp" />
-    <ClInclude Include="uwp\xamlthreadpool.hpp" />
-    <ClInclude Include="uwp\xamlpagehost.hpp" />
-    <ClInclude Include="uwp\xamlthread.hpp" />
     <ClInclude Include="windows\messagewindow.hpp" />
     <ClInclude Include="resources\ids.h" />
-    <ClInclude Include="tray\contextmenu.hpp" />
-    <ClInclude Include="tray\trayicon.hpp" />
     <ClInclude Include="uwp\uwp.hpp" />
     <ClInclude Include="windows\window.hpp" />
     <ClInclude Include="windows\windowclass.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="resources\language\TranslucentTB.he-IL.rc2" />
-    <ResourceCompile Include="resources\language\TranslucentTB.ko-KR.rc2" />
-    <ResourceCompile Include="resources\language\TranslucentTB.de-DE.rc2" />
     <ResourceCompile Include="resources\language\TranslucentTB.en-US.rc2" />
-    <ResourceCompile Include="resources\language\TranslucentTB.es-US.rc2" />
-    <ResourceCompile Include="resources\language\TranslucentTB.id-ID.rc2" />
-    <ResourceCompile Include="resources\language\TranslucentTB.ja-JP.rc2" />
-    <ResourceCompile Include="resources\language\TranslucentTB.ru-RU.rc2" />
-    <ResourceCompile Include="resources\language\TranslucentTB.tr-TR.rc2" />
     <ResourceCompile Include="resources\language\TranslucentTB.zh-CN.rc2" />
-    <ResourceCompile Include="resources\language\TranslucentTB.zh-TW.rc2" />
     <ResourceCompile Include="resources\TranslucentTB.rc2" />
   </ItemGroup>
   <ItemGroup>
@@ -161,16 +115,9 @@
     <ProjectReference Include="..\WindowsUdk\WindowsUdk.vcxproj">
       <Project>{55ed608b-b142-43a8-b42f-bbf292a61cbd}</Project>
       <DeploymentContent>false</DeploymentContent>
+      <!-- This project only produces a winmd, not a library to link against. -->
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
       <!-- Prevent the .winmd from showing up in the final output. -->
-      <Private>false</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Xaml\Xaml.vcxproj">
-      <Project>{9875d8e1-9594-445e-a0e4-07c6027f85e0}</Project>
-      <DeploymentContent>true</DeploymentContent>
-      <!--
-          Prevent the .pri and .winmd from showing up in the final output.
-          IDK why this doesn't also prevent copying the .dll, but whatever.
-      -->
       <Private>false</Private>
     </ProjectReference>
   </ItemGroup>
@@ -197,9 +144,6 @@
     </Midl>
   </ItemGroup>
   <ItemGroup>
-    <CustomDefFile Include="uwp\api-ms-win-appmodel-runtime-l1-1-5.def" />
-  </ItemGroup>
-  <ItemGroup>
     <PropertyPageSchema Include="resources\ResourceFileMapping.xml" />
   </ItemGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -214,8 +158,6 @@
     <Error Condition="!Exists('..\packages\Microsoft.SourceLink.GitHub.8.0.0\build\Microsoft.SourceLink.GitHub.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.SourceLink.GitHub.8.0.0\build\Microsoft.SourceLink.GitHub.targets'))" />
     <Error Condition="!Exists('..\packages\Microsoft.Trusted.Signing.Client.1.0.95\build\Microsoft.Trusted.Signing.Client.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Trusted.Signing.Client.1.0.95\build\Microsoft.Trusted.Signing.Client.props'))" />
     <Error Condition="!Exists('..\packages\Microsoft.Trusted.Signing.Client.1.0.95\build\Microsoft.Trusted.Signing.Client.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Trusted.Signing.Client.1.0.95\build\Microsoft.Trusted.Signing.Client.targets'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.UI.Xaml.2.8.7\build\native\Microsoft.UI.Xaml.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.UI.Xaml.2.8.7\build\native\Microsoft.UI.Xaml.props'))" />
-    <Error Condition="!Exists('..\packages\Microsoft.UI.Xaml.2.8.7\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.UI.Xaml.2.8.7\build\native\Microsoft.UI.Xaml.targets'))" />
     <Error Condition="!Exists('..\packages\Microsoft.Web.WebView2.1.0.3650.58\build\native\Microsoft.Web.WebView2.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Web.WebView2.1.0.3650.58\build\native\Microsoft.Web.WebView2.targets'))" />
     <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.props'))" />
     <Error Condition="!Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.targets'))" />
@@ -230,7 +172,6 @@
   <Import Project="..\packages\Microsoft.SourceLink.Common.8.0.0\build\Microsoft.SourceLink.Common.targets" Condition="Exists('..\packages\Microsoft.SourceLink.Common.8.0.0\build\Microsoft.SourceLink.Common.targets')" />
   <Import Project="..\packages\Microsoft.SourceLink.GitHub.8.0.0\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('..\packages\Microsoft.SourceLink.GitHub.8.0.0\build\Microsoft.SourceLink.GitHub.targets')" />
   <Import Project="..\packages\Microsoft.Trusted.Signing.Client.1.0.95\build\Microsoft.Trusted.Signing.Client.targets" Condition="Exists('..\packages\Microsoft.Trusted.Signing.Client.1.0.95\build\Microsoft.Trusted.Signing.Client.targets')" />
-  <Import Project="..\packages\Microsoft.UI.Xaml.2.8.7\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\packages\Microsoft.UI.Xaml.2.8.7\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\packages\Microsoft.Web.WebView2.1.0.3650.58\build\native\Microsoft.Web.WebView2.targets" Condition="Exists('..\packages\Microsoft.Web.WebView2.1.0.3650.58\build\native\Microsoft.Web.WebView2.targets')" />
   <Import Project="..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('..\packages\Microsoft.Windows.CppWinRT.2.0.250303.1\build\native\Microsoft.Windows.CppWinRT.targets')" />
   <Import Project="..\packages\Microsoft.Windows.SDK.BuildTools.10.0.26100.7463\build\Microsoft.Windows.SDK.BuildTools.targets" Condition="Exists('..\packages\Microsoft.Windows.SDK.BuildTools.10.0.26100.7463\build\Microsoft.Windows.SDK.BuildTools.targets')" />

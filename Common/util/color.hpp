@@ -12,11 +12,6 @@
 #include "numbers.hpp"
 #include "strings.hpp"
 
-#if __has_include(<winrt/TranslucentTB.Xaml.Models.Primitives.h>)
-#define HAS_WINRT_COLOR
-#include <winrt/TranslucentTB.Xaml.Models.Primitives.h>
-#endif
-
 namespace Util {
 	struct HsvColor {
 		double H, S, V, A;
@@ -24,15 +19,6 @@ namespace Util {
 		constexpr HsvColor() noexcept : H(0), S(0), V(0), A(0) { }
 		constexpr HsvColor(double h, double s, double v, double a = 1.0) noexcept : H(h), S(s), V(v), A(a) { }
 		constexpr HsvColor(const wf::Numerics::float4 &col) noexcept : H(col.x), S(col.y), V(col.z), A(col.w) { }
-
-#ifdef HAS_WINRT_COLOR
-		constexpr HsvColor(txmp::HsvColor col) noexcept : H(col.H), S(col.S), V(col.V), A(col.A) { }
-
-		constexpr operator txmp::HsvColor() const noexcept
-		{
-			return { .H = H, .S = S, .V = V, .A = A };
-		}
-#endif
 
 		constexpr operator wf::Numerics::float4() const noexcept
 		{

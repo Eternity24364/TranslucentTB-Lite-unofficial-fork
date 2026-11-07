@@ -39,7 +39,7 @@
     <DebuggerType>NativeOnly</DebuggerType>
     <DefaultLanguage>en-US</DefaultLanguage>
     <AppxBundleAutoResourcePackageQualifiers>Scale|DXFeatureLevel</AppxBundleAutoResourcePackageQualifiers>
-    <AppxDefaultResourceQualifiers>Language=en-us;de-de;es-us;id-id;ja-jp;tr-tr;zh-cn;zh-tw;ru-ru;uk-ua;ko-kr;he-il</AppxDefaultResourceQualifiers>
+    <AppxDefaultResourceQualifiers>Language=en-us;zh-cn</AppxDefaultResourceQualifiers>
     <!-- Prevent ucrtbased.dll from being copied to the output -->
     <DisableImplicitUCRTReference>true</DisableImplicitUCRTReference>
     <GenerateTestArtifacts>False</GenerateTestArtifacts>

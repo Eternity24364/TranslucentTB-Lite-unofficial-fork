@@ -7,7 +7,6 @@
 #include "winrt.hpp"
 
 #include "appinfo.hpp"
-#include "config/config.hpp"
 #include "error/error.hpp"
 #include "error/winrt.hpp"
 #include "error/std.hpp"
@@ -94,7 +93,8 @@ void Log::Initialize(const std::optional<std::filesystem::path> &storageFolder)
 		if (auto path = GetPath(storageFolder); !path.empty())
 		{
 			auto fileLog = std::make_shared<lazy_file_sink_mt>(std::move(path));
-			fileLog->set_level(Config::DEFAULT_LOG_VERBOSITY);
+			// The log level is fixed: warnings and errors go to the file, nothing else.
+			fileLog->set_level(spdlog::level::warn);
 			s_LogSink = fileLog;
 
 			defaultLogger->sinks().push_back(std::move(fileLog));

@@ -38,23 +38,11 @@ static constexpr Util::null_terminated_wstring_view WM_TTBHOOKTASKVIEWVISIBILITY
 // Sent by the worker to the hook to get the current Task View status
 static constexpr Util::null_terminated_wstring_view WM_TTBHOOKISTASKVIEWOPENED = L"TTBHook_IsTaskViewOpened";
 
-// Sent by LauncherVisibilitySink when the start menu opens/closes
-static constexpr Util::null_terminated_wstring_view WM_TTBSTARTVISIBILITYCHANGE = L"TTB_StartVisibilityChange";
-
-// Sent by TaskbarAttributeWorker to itself to switch back to main thread
-static constexpr Util::null_terminated_wstring_view WM_TTBSEARCHVISIBILITYCHANGE = L"TTB_SearchVisibilityChange";
-
-// Sent by TaskbarAttributeWorker to itself to switch back to main thread
-static constexpr Util::null_terminated_wstring_view WM_TTBFINDINSTARTVISIBILITYCHANGE = L"TTB_FindInStartVisibilityChange";
-
 // Sent to the worker to force the taskbar to toggle to normal and back to the expected appearance
 static constexpr Util::null_terminated_wstring_view WM_TTBFORCEREFRESHTASKBAR = L"TTB_ForceRefreshTaskbar";
 
 // Sent by another instance of TranslucentTB to signal that it was started while this instance is running.
 static constexpr Util::null_terminated_wstring_view WM_TTBNEWINSTANCESTARTED = L"TTB_NewInstanceStarted";
-
-// Sent to the worker to apply taskbar color preview.
-static constexpr Util::null_terminated_wstring_view WM_TTBAPPLYCOLORPREVIEW = L"TTB_ApplyColorPreview";
 
 // Hotkey IDs
 static constexpr int RESET_STATE_GLOBAL_HOTKEY_ID = 2;
@@ -87,10 +75,5 @@ static constexpr Util::null_terminated_wstring_view CORE_WINDOW = L"Windows.UI.C
 
 // UTF-8 Byte Order Mark
 static constexpr Util::null_terminated_string_view UTF8_BOM = "\xEF\xBB\xBF";
-
-// Serialization Keys
-static constexpr std::wstring_view CLASS_KEY = L"window_class";
-static constexpr std::wstring_view TITLE_KEY = L"window_title";
-static constexpr std::wstring_view FILE_KEY = L"process_name";
 
 #pragma endregion

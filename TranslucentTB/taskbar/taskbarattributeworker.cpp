@@ -133,41 +133,6 @@ void TaskbarAttributeWorker::OnWindowCreateDestroy(DWORD event, HWND hwnd, LONG 
 	}
 }
 
-void TaskbarAttributeWorker::OnForegroundWindowChange(DWORD, HWND hwnd, LONG idObject, LONG idChild, DWORD, DWORD)
-{
-	if (idObject == OBJID_WINDOW && idChild == CHILDID_SELF)
-	{
-		const Window oldForegroundWindow = std::exchange(m_ForegroundWindow, Window(hwnd).valid() ? hwnd : Window::NullWindow);
-
-		if (Error::ShouldLog<spdlog::level::debug>())
-		{
-			MessagePrint(spdlog::level::debug, std::format(L"Changed foreground window to {}", DumpWindow(m_ForegroundWindow)));
-		}
-
-		AttributeRefresher refresher(*this);
-		HMONITOR oldMonitor = nullptr;
-		if (oldForegroundWindow)
-		{
-			oldMonitor = oldForegroundWindow.monitor();
-			if (const auto it = m_Taskbars.find(oldMonitor); it != m_Taskbars.end())
-			{
-				refresher.refresh(it);
-			}
-		}
-
-		if (m_ForegroundWindow)
-		{
-			if (auto newMonitor = m_ForegroundWindow.monitor(); newMonitor != oldMonitor)
-			{
-				if (const auto it = m_Taskbars.find(newMonitor); it != m_Taskbars.end())
-				{
-					refresher.refresh(it);
-				}
-			}
-		}
-	}
-}
-
 void TaskbarAttributeWorker::OnWindowOrderChange(DWORD, HWND hwnd, LONG idObject, LONG idChild, DWORD, DWORD)
 {
 	if (const Window window(hwnd); idObject == OBJID_WINDOW && idChild == CHILDID_SELF && window.valid())
@@ -179,87 +144,12 @@ void TaskbarAttributeWorker::OnWindowOrderChange(DWORD, HWND hwnd, LONG idObject
 	}
 }
 
-void TaskbarAttributeWorker::OnStartVisibilityChange(bool state)
-{
-	HMONITOR mon = nullptr;
-	if (state)
-	{
-		mon = m_CurrentStartMonitor = GetStartMenuMonitor();
-
-		if (Error::ShouldLog<spdlog::level::debug>())
-		{
-			MessagePrint(spdlog::level::debug, std::format(L"Start menu opened on monitor {}", static_cast<void *>(mon)));
-		}
-	}
-	else
-	{
-		mon = std::exchange(m_CurrentStartMonitor, nullptr);
-
-		MessagePrint(spdlog::level::debug, L"Start menu closed");
-	}
-
-	if (const auto iter = m_Taskbars.find(mon); iter != m_Taskbars.end())
-	{
-		RefreshAttribute(iter);
-	}
-}
-
 void TaskbarAttributeWorker::OnTaskViewVisibilityChange(bool state)
 {
 	m_TaskViewActive = state;
 	MessagePrint(spdlog::level::debug, m_TaskViewActive ? L"Task View opened" : L"Task View closed");
 
 	RefreshAllAttributes();
-}
-
-void TaskbarAttributeWorker::OnSearchVisibilityChange(bool state)
-{
-	HMONITOR mon = nullptr;
-	if (state)
-	{
-		mon = m_CurrentSearchMonitor = GetSearchMonitor();
-
-		if (Error::ShouldLog<spdlog::level::debug>())
-		{
-			MessagePrint(spdlog::level::debug, std::format(L"Search opened on monitor {}", static_cast<void *>(mon)));
-		}
-	}
-	else
-	{
-		mon = std::exchange(m_CurrentSearchMonitor, nullptr);
-
-		MessagePrint(spdlog::level::debug, L"Search closed");
-	}
-
-	if (const auto iter = m_Taskbars.find(mon); iter != m_Taskbars.end())
-	{
-		RefreshAttribute(iter);
-	}
-}
-
-void TaskbarAttributeWorker::OnFindInStartVisibilityChange(bool state)
-{
-	HMONITOR mon = nullptr;
-	if (state)
-	{
-		mon = m_CurrentFindInStartMonitor = GetFindInStartMonitor();
-
-		if (Error::ShouldLog<spdlog::level::debug>())
-		{
-			MessagePrint(spdlog::level::debug, std::format(L"Find in Start opened on monitor {}", static_cast<void*>(mon)));
-		}
-	}
-	else
-	{
-		mon = std::exchange(m_CurrentFindInStartMonitor, nullptr);
-
-		MessagePrint(spdlog::level::debug, L"Find in Start closed");
-	}
-
-	if (const auto iter = m_Taskbars.find(mon); iter != m_Taskbars.end())
-	{
-		RefreshAttribute(iter);
-	}
 }
 
 void TaskbarAttributeWorker::OnForceRefreshTaskbar(Window taskbar)
@@ -289,17 +179,6 @@ LRESULT TaskbarAttributeWorker::OnSystemSettingsChange(UINT uiAction)
 	return 0;
 }
 
-LRESULT TaskbarAttributeWorker::OnPowerBroadcast(const POWERBROADCAST_SETTING *settings)
-{
-	if (settings && settings->PowerSetting == GUID_POWER_SAVING_STATUS && settings->DataLength == sizeof(DWORD))
-	{
-		m_PowerSaver = *reinterpret_cast<const DWORD *>(&settings->Data);
-		RefreshAllAttributes();
-	}
-
-	return TRUE;
-}
-
 LRESULT TaskbarAttributeWorker::OnRequestAttributeRefresh(LPARAM lParam)
 {
 	if (!m_disableAttributeRefreshReply && !m_TaskbarService)
@@ -307,9 +186,9 @@ LRESULT TaskbarAttributeWorker::OnRequestAttributeRefresh(LPARAM lParam)
 		const Window window = reinterpret_cast<HWND>(lParam);
 		if (const auto iter = m_Taskbars.find(window.monitor()); iter != m_Taskbars.end() && iter->second.Taskbar.TaskbarWindow == window)
 		{
-			if (const auto config = GetConfig(iter); config.Accent != ACCENT_NORMAL)
+			if (const auto appearance = GetAppearance(iter); appearance.Accent != ACCENT_NORMAL)
 			{
-				SetAttribute(iter, config);
+				SetAttribute(iter, appearance);
 				return 1;
 			}
 		}
@@ -339,10 +218,6 @@ LRESULT TaskbarAttributeWorker::MessageHandler(UINT uMsg, WPARAM wParam, LPARAM 
 		ResetState();
 		return 0;
 	}
-	else if (uMsg == WM_POWERBROADCAST && wParam == PBT_POWERSETTINGCHANGE)
-	{
-		return OnPowerBroadcast(reinterpret_cast<const POWERBROADCAST_SETTING *>(lParam));
-	}
 	else if (uMsg == m_TaskbarCreatedMessage)
 	{
 		MessagePrint(spdlog::level::debug, L"Main taskbar got created, refreshing...");
@@ -358,133 +233,38 @@ LRESULT TaskbarAttributeWorker::MessageHandler(UINT uMsg, WPARAM wParam, LPARAM 
 		OnTaskViewVisibilityChange(wParam);
 		return 0;
 	}
-	else if (uMsg == m_StartVisibilityChangeMessage)
-	{
-		OnStartVisibilityChange(wParam);
-		return 0;
-	}
-	else if (uMsg == m_SearchVisibilityChangeMessage)
-	{
-		OnSearchVisibilityChange(wParam);
-		return 0;
-	}
-	else if (uMsg == m_FindInStartVisibilityChangeMessage)
-	{
-		OnFindInStartVisibilityChange(wParam);
-		return 0;
-	}
 	else if (uMsg == m_ForceRefreshTaskbar)
 	{
 		OnForceRefreshTaskbar(reinterpret_cast<HWND>(lParam));
 		return 0;
 	}
-	else if (uMsg == m_ApplyColorPreview)
-	{
-		txmp::TaskbarState state = static_cast<txmp::TaskbarState>(wParam);
-		uint32_t rgba = static_cast<uint32_t>(lParam);
-		Util::Color color = Util::Color::FromRGBA(rgba);
-		try {
-			ApplyColorPreview(state, color);
-		} catch (const std::out_of_range&) {
-			return 1;
-		}
-		return 0;
-	}
-
 	return MessageWindow::MessageHandler(uMsg, wParam, lParam);
 }
 
-TaskbarAppearance TaskbarAttributeWorker::GetConfig(taskbar_iterator taskbar) const
+TaskbarAppearance TaskbarAttributeWorker::GetAppearance(taskbar_iterator taskbar) const
 {
-	const auto& config = m_ConfigManager.GetConfig();
-
-	if (config.BatterySaverAppearance.Enabled && m_PowerSaver)
+	if (m_TaskViewActive)
 	{
-		return WithPreview(txmp::TaskbarState::BatterySaver, config.BatterySaverAppearance);
-	}
-
-	if (config.TaskViewOpenedAppearance.Enabled && m_TaskViewActive)
-	{
-		return WithPreview(txmp::TaskbarState::TaskViewOpened, config.TaskViewOpenedAppearance);
+		return TASK_VIEW_APPEARANCE;
 	}
 
 	// Task View is ignored by peek, so shall we
 	if (m_PeekActive)
 	{
-		return WithPreview(txmp::TaskbarState::Desktop, config.DesktopAppearance);
+		return DESKTOP_APPEARANCE;
 	}
 
-	// on windows 11, search is considered open when start is, so we need to check for start first.
-	bool startOpened;
-	if (m_IsWindows11 && (m_CurrentSearchMonitor != nullptr || m_CurrentFindInStartMonitor != nullptr))
+	if (!taskbar->second.MaximisedWindows.empty())
 	{
-		// checking the search monitor is more reliable on windows 11 (if available)
-		// so check the start monitor to see if it's open and then use the search monitor
-		// to check *where* it's open.
-		startOpened = m_CurrentStartMonitor != nullptr && (m_CurrentSearchMonitor == taskbar->first || m_CurrentFindInStartMonitor == taskbar->first);
+		return MAXIMISED_APPEARANCE;
 	}
-	else
+
+	if (!taskbar->second.NormalWindows.empty())
 	{
-		startOpened = m_CurrentStartMonitor == taskbar->first;
+		return WINDOW_APPEARANCE;
 	}
 
-	if (config.StartOpenedAppearance.Enabled && startOpened)
-	{
-		return WithPreview(txmp::TaskbarState::StartOpened, config.StartOpenedAppearance);
-	}
-
-	if (config.SearchOpenedAppearance.Enabled && !startOpened && (m_CurrentSearchMonitor == taskbar->first || m_CurrentFindInStartMonitor == taskbar->first))
-	{
-		return WithPreview(txmp::TaskbarState::SearchOpened, config.SearchOpenedAppearance);
-	}
-
-	auto &maximisedWindows = taskbar->second.MaximisedWindows;
-	if (config.MaximisedWindowAppearance.Enabled && !maximisedWindows.empty())
-	{
-		if (config.MaximisedWindowAppearance.HasRules())
-		{
-			for (const Window wnd : Window::DesktopWindow().get_ordered_childrens())
-			{
-				// find the highest maximized window in the z-order.
-				if (maximisedWindows.contains(wnd))
-				{
-					if (const auto rule = config.MaximisedWindowAppearance.FindRule(wnd))
-					{
-						// if it has a rule, use that rule
-						return *rule;
-					}
-					else
-					{
-						// we only consider the highest z-order maximized window for rules
-						// so stop looking through the z-order
-						break;
-					}
-				}
-			}
-		}
-
-		// otherwise, use the normal maximized state
-		return WithPreview(txmp::TaskbarState::MaximisedWindow, config.MaximisedWindowAppearance);
-	}
-
-	if (config.VisibleWindowAppearance.Enabled && (!maximisedWindows.empty() || !taskbar->second.NormalWindows.empty()))
-	{
-		// if there is no maximized window, and the foreground window is on the current monitor
-		if (config.VisibleWindowAppearance.HasRules() && maximisedWindows.empty() && m_ForegroundWindow.monitor() == taskbar->first)
-		{
-			// find a rule for the foreground window
-			if (const auto rule = config.VisibleWindowAppearance.FindRule(m_ForegroundWindow))
-			{
-				// if it has a rule, use that rule
-				return *rule;
-			}
-		}
-
-		// otherwise use normal visible state
-		return WithPreview(txmp::TaskbarState::VisibleWindow, config.VisibleWindowAppearance);
-	}
-
-	return WithPreview(txmp::TaskbarState::Desktop, config.DesktopAppearance);
+	return DESKTOP_APPEARANCE;
 }
 
 void TaskbarAttributeWorker::ShowAeroPeekButton(const TaskbarInfo &taskbar, bool show)
@@ -623,7 +403,7 @@ void TaskbarAttributeWorker::RefreshAttribute(taskbar_iterator taskbar)
 	// See comment in InsertWindow.
 	const auto taskbarInfo = taskbar->second.Taskbar;
 
-	const auto &cfg = GetConfig(taskbar);
+	const auto cfg = GetAppearance(taskbar);
 	SetAttribute(taskbar, cfg);
 
 	if (m_TaskbarService)
@@ -696,7 +476,7 @@ void TaskbarAttributeWorker::InsertWindow(Window window, bool refresh)
 	// changing, it means m_Taskbars is cleared while we still
 	// have an iterator to it. Acquiring the iterator after the
 	// call to on_current_desktop resolves this issue.
-	const bool windowMatches = window.is_user_window() && !m_ConfigManager.GetConfig().IgnoredWindows.IsFiltered(window);
+	const bool windowMatches = window.is_user_window();
 	const bool isMaximised = window.maximised();
 	const bool isMinimised = window.minimised();
 	const HMONITOR mon = window.monitor();
@@ -775,32 +555,6 @@ bool TaskbarAttributeWorker::SetNewWindowExStyle(Window wnd, LONG_PTR oldStyle, 
 	}
 }
 
-void TaskbarAttributeWorker::DumpWindowSet(std::wstring_view prefix, const std::unordered_set<Window> &set, bool showInfo)
-{
-	if (!set.empty())
-	{
-		std::wstring buf;
-		for (const Window window : set)
-		{
-			buf.clear();
-			if (showInfo)
-			{
-				buf += prefix;
-				buf += DumpWindow(window);
-			}
-			else
-			{
-				std::format_to(std::back_inserter(buf), L"{}{}", prefix, static_cast<void *>(window.handle()));
-			}
-			MessagePrint(spdlog::level::off, buf);
-		}
-	}
-	else
-	{
-		MessagePrint(spdlog::level::off, std::format(L"{}[none]", prefix));
-	}
-}
-
 std::wstring TaskbarAttributeWorker::DumpWindow(Window window)
 {
 	if (window)
@@ -824,125 +578,6 @@ std::wstring TaskbarAttributeWorker::DumpWindow(Window window)
 	else
 	{
 		return L"0x0";
-	}
-}
-
-void TaskbarAttributeWorker::CreateAppVisibility()
-{
-	if (m_StartVisibilityChangeMessage)
-	{
-		try
-		{
-			m_IAV = wil::CoCreateInstance<IAppVisibility>(CLSID_AppVisibility);
-		}
-		catch (const wil::ResultException &err)
-		{
-			ResultExceptionHandle(err, spdlog::level::warn, L"Failed to create app visibility instance.");
-			return;
-		}
-
-		const auto av_sink = winrt::make_self<LauncherVisibilitySink>(*this, *m_StartVisibilityChangeMessage);
-		m_IAVECookie.associate(m_IAV.get());
-		HresultVerify(m_IAV->Advise(av_sink.get(), m_IAVECookie.put()), spdlog::level::warn, L"Failed to register app visibility sink.");
-	}
-}
-
-void TaskbarAttributeWorker::CreateSearchManager()
-{
-	UnregisterSearchCallbacks();
-
-	m_SearchManager = nullptr;
-	m_SearchViewCoordinator = nullptr;
-	m_FindInStartViewCoordinator = nullptr;
-
-	if (m_SearchVisibilityChangeMessage)
-	{
-		if (m_IsWindows11)
-		{
-			try
-			{
-				using winrt::WindowsUdk::UI::Shell::ShellView;
-				using winrt::WindowsUdk::UI::Shell::ShellViewCoordinator;
-
-				m_SearchViewCoordinator = ShellViewCoordinator { winrt::WindowsUdk::UI::Shell::ShellView::Search };
-
-				m_SearchViewVisibilityChangedToken = m_SearchViewCoordinator.VisibilityChanged([this](const ShellViewCoordinator &coordinator, const wf::IInspectable &)
-				{
-					post_message(*m_SearchVisibilityChangeMessage, coordinator.Visibility() == winrt::WindowsUdk::UI::Shell::ViewVisibility::Visible);
-				});
-
-				m_FindInStartViewCoordinator = ShellViewCoordinator { winrt::WindowsUdk::UI::Shell::ShellView::FindInStart };
-
-				m_FindInStartVisibilityChangedToken = m_FindInStartViewCoordinator.VisibilityChanged([this](const ShellViewCoordinator& coordinator, const wf::IInspectable&)
-				{
-					post_message(*m_FindInStartVisibilityChangeMessage, coordinator.Visibility() == winrt::WindowsUdk::UI::Shell::ViewVisibility::Visible);
-				});
-			}
-			HresultErrorCatch(spdlog::level::warn, L"Failed to create ShellViewCoordinator");
-		}
-		else
-		{
-			try
-			{
-				using winrt::Windows::Internal::Shell::Experience::IShellExperienceManagerFactory;
-				using winrt::Windows::Internal::Shell::Experience::ICortanaExperienceManager;
-
-				auto serviceManager = wil::CoCreateInstance<IServiceProvider>(CLSID_ImmersiveShell, CLSCTX_LOCAL_SERVER);
-
-				IShellExperienceManagerFactory factory(nullptr);
-				winrt::check_hresult(serviceManager->QueryService(winrt::guid_of<IShellExperienceManagerFactory>(), winrt::guid_of<IShellExperienceManagerFactory>(), winrt::put_abi(factory)));
-
-				m_SearchManager = factory.GetExperienceManager(win32::IsAtLeastBuild(19041) ? SEH_SearchApp : SEH_Cortana).as<ICortanaExperienceManager>();
-
-				m_SuggestionsShownToken = m_SearchManager.SuggestionsShown([this](const ICortanaExperienceManager &, const wf::IInspectable &)
-				{
-					post_message(*m_SearchVisibilityChangeMessage, true, 0);
-				});
-
-				m_SuggestionsHiddenToken = m_SearchManager.SuggestionsHidden([this](const ICortanaExperienceManager &, const wf::IInspectable &)
-				{
-					post_message(*m_SearchVisibilityChangeMessage, false, 0);
-				});
-			}
-			ResultExceptionCatch(spdlog::level::warn, L"Failed to create immersive shell service provider")
-			HresultErrorCatch(spdlog::level::warn, L"Failed to query for ICortanaExperienceManager");
-		}
-	}
-}
-
-void TaskbarAttributeWorker::UnregisterSearchCallbacks() noexcept
-{
-	if (m_SearchManager)
-	{
-		if (m_SuggestionsShownToken)
-		{
-			m_SearchManager.SuggestionsShown(m_SuggestionsShownToken);
-			m_SuggestionsShownToken = { };
-		}
-
-		if (m_SuggestionsHiddenToken)
-		{
-			m_SearchManager.SuggestionsHidden(m_SuggestionsHiddenToken);
-			m_SuggestionsHiddenToken = { };
-		}
-	}
-
-	if (m_FindInStartViewCoordinator)
-	{
-		if (m_FindInStartVisibilityChangedToken)
-		{
-			m_FindInStartViewCoordinator.VisibilityChanged(m_FindInStartVisibilityChangedToken);
-			m_FindInStartVisibilityChangedToken = { };
-		}
-	}
-
-	if (m_SearchViewCoordinator)
-	{
-		if (m_SearchViewVisibilityChangedToken)
-		{
-			m_SearchViewCoordinator.VisibilityChanged(m_SearchViewVisibilityChangedToken);
-			m_SearchViewVisibilityChangedToken = { };
-		}
 	}
 }
 
@@ -1029,63 +664,6 @@ void TaskbarAttributeWorker::ReturnToStock()
 			}
 		}
 	}
-}
-
-bool TaskbarAttributeWorker::IsStartMenuOpened() const
-{
-	if (m_IAV)
-	{
-		BOOL start_visible;
-		const HRESULT hr = m_IAV->IsLauncherVisible(&start_visible);
-		if (SUCCEEDED(hr))
-		{
-			return start_visible;
-		}
-		else
-		{
-			HresultHandle(hr, spdlog::level::info, L"Failed to query launcher visibility state.");
-		}
-	}
-
-	return false;
-}
-
-bool TaskbarAttributeWorker::IsSearchOpened() const try
-{
-	if (m_SearchViewCoordinator)
-	{
-		return m_SearchViewCoordinator.Visibility() == winrt::WindowsUdk::UI::Shell::ViewVisibility::Visible;
-	}
-	else if (m_SearchManager)
-	{
-		return m_SearchManager.SuggestionsShowing();
-	}
-	else
-	{
-		return false;
-	}
-}
-catch (const winrt::hresult_error &err)
-{
-	HresultErrorHandle(err, spdlog::level::info, L"Failed to check if search is opened");
-	return false;
-}
-
-bool TaskbarAttributeWorker::IsFindInStartOpened() const try
-{
-	if (m_FindInStartViewCoordinator)
-	{
-		return m_FindInStartViewCoordinator.Visibility() == winrt::WindowsUdk::UI::Shell::ViewVisibility::Visible;
-	}
-	else
-	{
-		return false;
-	}
-}
-catch (const winrt::hresult_error &err)
-{
-	HresultErrorHandle(err, spdlog::level::info, L"Failed to check if find in start is opened");
-	return false;
 }
 
 void TaskbarAttributeWorker::InsertTaskbar(HMONITOR mon, Window window)
@@ -1220,187 +798,43 @@ TaskbarType TaskbarAttributeWorker::GetTaskbarType(Window taskbar)
 	}
 }
 
-TaskbarAttributeWorker::TaskbarAttributeWorker(ConfigManager &cfgManager, HINSTANCE hInstance, DynamicLoader &loader, const std::optional<std::filesystem::path> &storageFolder) :
+TaskbarAttributeWorker::TaskbarAttributeWorker(HINSTANCE hInstance, DynamicLoader &loader, const std::optional<std::filesystem::path> &storageFolder) :
 	MessageWindow(TTB_WORKERWINDOW, TTB_WORKERWINDOW, hInstance, WS_POPUP, WS_EX_NOREDIRECTIONBITMAP),
 	SetWindowCompositionAttribute(loader.SetWindowCompositionAttribute()),
 	ShouldSystemUseDarkMode(loader.ShouldSystemUseDarkMode()),
-	m_PowerSaver(false),
 	m_TaskViewActive(false),
 	m_PeekActive(false),
 	m_disableAttributeRefreshReply(false),
 	m_ResettingState(false),
 	m_ResetStateReentered(false),
 	m_TaskbarType(TaskbarType::Unknown),
-	m_CurrentStartMonitor(nullptr),
-	m_CurrentSearchMonitor(nullptr),
-	m_CurrentFindInStartMonitor(nullptr),
-	m_ConfigManager(cfgManager),
 	m_ThunkPage(member_thunk::allocate_page()),
 	m_PeekUnpeekHook(CreateHook(EVENT_SYSTEM_PEEKSTART, EVENT_SYSTEM_PEEKEND, CreateThunk(&TaskbarAttributeWorker::OnAeroPeekEnterExit))),
 	m_CloakUncloakHook(CreateHook(EVENT_OBJECT_CLOAKED, EVENT_OBJECT_UNCLOAKED, CreateThunk(&TaskbarAttributeWorker::WindowInsertRemove<EVENT_OBJECT_UNCLOAKED, EVENT_OBJECT_CLOAKED>))),
 	m_MinimizeRestoreHook(CreateHook(EVENT_SYSTEM_MINIMIZESTART, EVENT_SYSTEM_MINIMIZEEND, CreateThunk(&TaskbarAttributeWorker::WindowInsertRemove<EVENT_SYSTEM_MINIMIZEEND, EVENT_SYSTEM_MINIMIZESTART>))),
 	m_ShowHideHook(CreateHook(EVENT_OBJECT_SHOW, EVENT_OBJECT_HIDE, CreateThunk(&TaskbarAttributeWorker::WindowInsertRemove<EVENT_OBJECT_SHOW, EVENT_OBJECT_HIDE>))),
 	m_CreateDestroyHook(CreateHook(EVENT_OBJECT_CREATE, EVENT_OBJECT_DESTROY, CreateThunk(&TaskbarAttributeWorker::OnWindowCreateDestroy))),
-	m_ForegroundChangeHook(CreateHook(EVENT_SYSTEM_FOREGROUND, CreateThunk(&TaskbarAttributeWorker::OnForegroundWindowChange))),
 	m_OrderChangeHook(CreateHook(EVENT_OBJECT_REORDER, CreateThunk(&TaskbarAttributeWorker::OnWindowOrderChange))),
-	m_SearchManager(nullptr),
-	m_SearchViewCoordinator(nullptr),
-	m_FindInStartViewCoordinator(nullptr),
 	m_TaskViewViewCoordinator(nullptr),
 	m_TaskbarCreatedMessage(Window::RegisterMessage(WM_TASKBARCREATED)),
 	m_RefreshRequestedMessage(Window::RegisterMessage(WM_TTBHOOKREQUESTREFRESH)),
 	m_TaskViewVisibilityChangeMessage(Window::RegisterMessage(WM_TTBHOOKTASKVIEWVISIBILITYCHANGE)),
 	m_IsTaskViewOpenedMessage(Window::RegisterMessage(WM_TTBHOOKISTASKVIEWOPENED)),
-	m_StartVisibilityChangeMessage(Window::RegisterMessage(WM_TTBSTARTVISIBILITYCHANGE)),
-	m_SearchVisibilityChangeMessage(Window::RegisterMessage(WM_TTBSEARCHVISIBILITYCHANGE)),
-	m_FindInStartVisibilityChangeMessage(Window::RegisterMessage(WM_TTBFINDINSTARTVISIBILITYCHANGE)),
 	m_ForceRefreshTaskbar(Window::RegisterMessage(WM_TTBFORCEREFRESHTASKBAR)),
-	m_ApplyColorPreview(Window::RegisterMessage(WM_TTBAPPLYCOLORPREVIEW)),
 	m_LastExplorerPid(0),
-	m_HookDll(storageFolder, cfgManager.GetConfig().CopyDlls.value_or(true), L"ExplorerHooks.dll"),
+	m_HookDll(storageFolder, true, L"ExplorerHooks.dll"),
 	m_InjectExplorerHook(m_HookDll.GetProc<PFN_INJECT_EXPLORER_HOOK>("InjectExplorerHook")),
-	m_TAPDll(storageFolder, cfgManager.GetConfig().CopyDlls.value_or(true), L"ExplorerTAP.dll"),
+	m_TAPDll(storageFolder, true, L"ExplorerTAP.dll"),
 	m_InjectExplorerTAP(m_TAPDll.GetProc<PFN_INJECT_EXPLORER_TAP>("InjectExplorerTAP")),
-	m_IsWindows11(win32::IsAtLeastBuild(22000)),
-	m_IsBlurAccentStateSupported(!m_IsWindows11)
+	m_IsWindows11(win32::IsAtLeastBuild(22000))
 {
 	const auto stateThunk = CreateThunk(&TaskbarAttributeWorker::OnWindowStateChange);
 	m_ResizeMoveHook = CreateHook(EVENT_OBJECT_LOCATIONCHANGE, stateThunk);
-	m_TitleChangeHook = CreateHook(EVENT_OBJECT_NAMECHANGE, stateThunk);
 	m_ParentChangeHook = CreateHook(EVENT_OBJECT_PARENTCHANGE, stateThunk);
 	m_ThunkPage.mark_executable();
 
-	m_PowerSaverHook.reset(RegisterPowerSettingNotification(m_WindowHandle, &GUID_POWER_SAVING_STATUS, DEVICE_NOTIFY_WINDOW_HANDLE));
-	if (!m_PowerSaverHook)
-	{
-		LastErrorHandle(spdlog::level::warn, L"Failed to create battery saver notification handle");
-	}
-
-	CreateAppVisibility();
-
-	if (win32::IsExactBuild(22000))
-	{
-		// Windows 11 RTM. sometimes very laggy at release, fixed in KB5006746 (22000.282)
-		if (const auto [version, hr] = win32::GetWindowsBuild(); SUCCEEDED(hr))
-		{
-			m_IsBlurAccentStateSupported = version.Revision >= 282;
-		}
-	}
-
 	// we don't want to consider the first state reset as an Explorer restart.
 	ResetState(true);
-}
-
-void TaskbarAttributeWorker::DumpState()
-{
-	MessagePrint(spdlog::level::off, L"===== Begin TaskbarAttributeWorker state dump =====");
-
-	std::wstring buf;
-	for (const auto &[monitor, info] : m_Taskbars)
-	{
-		buf.clear();
-		std::format_to(std::back_inserter(buf), L"Monitor {}:", static_cast<void *>(monitor));
-		MessagePrint(spdlog::level::off, buf);
-
-		buf.clear();
-		std::format_to(std::back_inserter(buf), L"\tTaskbar handle: {}", DumpWindow(info.Taskbar.TaskbarWindow));
-		MessagePrint(spdlog::level::off, buf);
-
-		buf.clear();
-		std::format_to(std::back_inserter(buf), L"\tPeek button handle: {}", DumpWindow(info.Taskbar.PeekWindow));
-		MessagePrint(spdlog::level::off, buf);
-
-		buf.clear();
-		std::format_to(std::back_inserter(buf), L"\tInner XAML handle: {}", DumpWindow(info.Taskbar.InnerXamlContent));
-		MessagePrint(spdlog::level::off, buf);
-
-		buf.clear();
-		std::format_to(std::back_inserter(buf), L"\tWorkerW handle: {}", DumpWindow(info.Taskbar.WorkerWWindow));
-		MessagePrint(spdlog::level::off, buf);
-
-		MessagePrint(spdlog::level::off, L"\tMaximised windows:");
-		DumpWindowSet(L"\t\t\t", info.MaximisedWindows);
-
-		MessagePrint(spdlog::level::off, L"\tNormal windows:");
-		DumpWindowSet(L"\t\t\t", info.NormalWindows);
-	}
-
-	buf.clear();
-	std::format_to(std::back_inserter(buf), L"User is using Aero Peek: {}", m_PeekActive);
-	MessagePrint(spdlog::level::off, buf);
-
-	buf.clear();
-	std::format_to(std::back_inserter(buf), L"User is using Task View: {}", m_TaskViewActive);
-	MessagePrint(spdlog::level::off, buf);
-
-	if (m_CurrentStartMonitor != nullptr)
-	{
-		buf.clear();
-		std::format_to(std::back_inserter(buf), L"Start menu is opened: true [monitor {}]", static_cast<void *>(m_CurrentStartMonitor));
-		MessagePrint(spdlog::level::off, buf);
-	}
-	else
-	{
-		MessagePrint(spdlog::level::off, L"Start menu is opened: false");
-	}
-
-	if (m_CurrentSearchMonitor != nullptr)
-	{
-		buf.clear();
-		std::format_to(std::back_inserter(buf), L"Search is opened: true [monitor {}]", static_cast<void *>(m_CurrentSearchMonitor));
-		MessagePrint(spdlog::level::off, buf);
-	}
-	else
-	{
-		MessagePrint(spdlog::level::off, L"Search is opened: false");
-	}
-
-	if (m_CurrentFindInStartMonitor != nullptr)
-	{
-		buf.clear();
-		std::format_to(std::back_inserter(buf), L"Find in Start is opened: true [monitor {}]", static_cast<void*>(m_CurrentFindInStartMonitor));
-		MessagePrint(spdlog::level::off, buf);
-	}
-	else
-	{
-		MessagePrint(spdlog::level::off, L"Find in Start is opened: false");
-	}
-
-	buf.clear();
-	std::format_to(std::back_inserter(buf), L"Current foreground window: {}", DumpWindow(m_ForegroundWindow));
-	MessagePrint(spdlog::level::off, buf);
-
-	switch (m_TaskbarType)
-	{
-	case TaskbarType::Unknown:
-		MessagePrint(spdlog::level::off, L"Current taskbar type: Unknown");
-		break;
-
-	case TaskbarType::Classic:
-		MessagePrint(spdlog::level::off, L"Current taskbar type: Classic");
-		break;
-
-	case TaskbarType::Mixed:
-		MessagePrint(spdlog::level::off, L"Current taskbar type: Mixed");
-		break;
-
-	case TaskbarType::XAML:
-		MessagePrint(spdlog::level::off, L"Current taskbar type: XAML");
-		break;
-	}
-
-	buf.clear();
-	std::format_to(std::back_inserter(buf), L"Worker handles attribute refresh requests from hooks: {}", !m_disableAttributeRefreshReply);
-	MessagePrint(spdlog::level::off, buf);
-
-	buf.clear();
-	std::format_to(std::back_inserter(buf), L"Battery saver is active: {}", m_PowerSaver);
-	MessagePrint(spdlog::level::off, buf);
-
-	MessagePrint(spdlog::level::off, L"Taskbars currently using normal appearance:");
-	DumpWindowSet(L"\t\t", m_NormalTaskbars, false);
-
-	MessagePrint(spdlog::level::off, L"===== End TaskbarAttributeWorker state dump =====");
 }
 
 void TaskbarAttributeWorker::ResetState(bool manual)
@@ -1418,13 +852,8 @@ void TaskbarAttributeWorker::ResetState(bool manual)
 		});
 
 		// Clear state
-		m_PowerSaver = false;
 		m_PeekActive = false;
 		m_TaskViewActive = false;
-		m_CurrentStartMonitor = nullptr;
-		m_CurrentSearchMonitor = nullptr;
-		m_CurrentFindInStartMonitor = nullptr;
-		m_ForegroundWindow = Window::NullWindow;
 
 		m_Taskbars.clear();
 		m_NormalTaskbars.clear();
@@ -1479,14 +908,7 @@ void TaskbarAttributeWorker::ResetState(bool manual)
 						HresultVerify(m_TaskbarService->KillExplorerWhenPackageUninstalls(fullName->c_str()), spdlog::level::warn, L"Couldn't configure TAP to kill Explorer once " APP_NAME L" is uninstalled.");
 					}
 				}
-				else if (m_TaskbarType != TaskbarType::Unknown)
-				{
-					if (!m_IsBlurAccentStateSupported)
-					{
-						m_ConfigManager.UpgradeBlur();
-					}
-				}
-				else
+				else if (m_TaskbarType == TaskbarType::Unknown)
 				{
 					// unknown taskbar type - we might've detected explorer too early. do nothing for now. we should get a refresh later and be able to detect it.
 					return;
@@ -1505,22 +927,11 @@ void TaskbarAttributeWorker::ResetState(bool manual)
 		// drop the old hooks.
 		oldHooks.clear();
 
-		CreateSearchManager();
 		CreateTaskViewManager();
 
 		// This might race but it's not an issue because
 		// it'll race on a single thread and only ends up
 		// doing something twice.
-
-		SYSTEM_POWER_STATUS powerStatus;
-		if (GetSystemPowerStatus(&powerStatus))
-		{
-			m_PowerSaver = powerStatus.SystemStatusFlag;
-		}
-		else
-		{
-			LastErrorHandle(spdlog::level::warn, L"Failed to verify system power status");
-		}
 
 		// TODO: check if aero peek is active
 
@@ -1531,22 +942,6 @@ void TaskbarAttributeWorker::ResetState(bool manual)
 		else if (const auto hookWnd = Window::Find(TTBHOOK_TASKVIEWMONITOR, TTBHOOK_TASKVIEWMONITOR); hookWnd && m_IsTaskViewOpenedMessage)
 		{
 			m_TaskViewActive = hookWnd.send_message(*m_IsTaskViewOpenedMessage);
-		}
-
-		m_ForegroundWindow = Window::ForegroundWindow();
-		if (IsStartMenuOpened())
-		{
-			m_CurrentStartMonitor = GetStartMenuMonitor();
-		}
-
-		if (IsSearchOpened())
-		{
-			m_CurrentSearchMonitor = GetSearchMonitor();
-		}
-
-		if (IsFindInStartOpened())
-		{
-			m_CurrentFindInStartMonitor = GetFindInStartMonitor();
 		}
 
 		for (const Window window : Window::FindEnum())
@@ -1578,6 +973,5 @@ TaskbarAttributeWorker::~TaskbarAttributeWorker() noexcept(false)
 {
 	m_disableAttributeRefreshReply = true;
 	UnregisterTaskViewCallbacks();
-	UnregisterSearchCallbacks();
 	ReturnToStock();
 }

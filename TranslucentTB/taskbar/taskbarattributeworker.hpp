@@ -1,27 +1,21 @@
 #pragma once
 #include "arch.h"
-#include <array>
 #include <chrono>
 #include <member_thunk/page.hpp>
 #include <optional>
-#include <ShObjIdl.h>
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <wil/com.h>
 #include <wil/resource.h>
 #include "winrt.hpp"
-#include <winrt/TranslucentTB.Xaml.Models.Primitives.h>
-#include <winrt/Windows.Internal.Shell.Experience.h> // this is evil >:3
 #include <winrt/WindowsUdk.UI.Shell.h> // this is less evil
 
-#include "config/taskbarappearance.hpp"
+#include "config/appearances.hpp"
 #include "../dynamicloader.hpp"
 #include "../ExplorerHooks/api.hpp"
 #include "../ExplorerTAP/api.hpp"
 #include "ITaskbarAppearanceService.h"
-#include "launchervisibilitysink.hpp"
 #include "../windows/messagewindow.hpp"
 #include "undoc/user32.hpp"
 #include "undoc/uxtheme.hpp"
@@ -30,7 +24,6 @@
 #include "wilx.hpp"
 #include "../ProgramLog/error/win32.hpp"
 #include "../loadabledll.hpp"
-#include "../managers/configmanager.hpp"
 
 enum class TaskbarType {
 	Unknown,
@@ -72,27 +65,20 @@ private:
 	// - add an option for peek to consider main monitor only or all monitors
 	// 	   if yes, should always refresh peek whenever anything changes
 	// 	   and need some custom logic to check all monitors
-	// - make settings optional so that they stack on top of each other?
 
 	// The magic function that does the thing
 	const PFN_SET_WINDOW_COMPOSITION_ATTRIBUTE SetWindowCompositionAttribute;
 	const PFN_SHOULD_SYSTEM_USE_DARK_MODE ShouldSystemUseDarkMode;
 
 	// State
-	bool m_PowerSaver;
 	bool m_TaskViewActive;
 	bool m_PeekActive;
 	bool m_disableAttributeRefreshReply;
 	bool m_ResettingState;
 	bool m_ResetStateReentered;
-	HMONITOR m_CurrentStartMonitor;
-	HMONITOR m_CurrentSearchMonitor;
-	HMONITOR m_CurrentFindInStartMonitor;
-	Window m_ForegroundWindow;
 	TaskbarType m_TaskbarType;
 	std::unordered_map<HMONITOR, MonitorInfo> m_Taskbars;
 	std::unordered_set<Window> m_NormalTaskbars;
-	ConfigManager &m_ConfigManager;
 
 	// Hooks
 	member_thunk::page m_ThunkPage;
@@ -102,25 +88,10 @@ private:
 	wil::unique_hwineventhook m_ResizeMoveHook;
 	wil::unique_hwineventhook m_ShowHideHook;
 	wil::unique_hwineventhook m_CreateDestroyHook;
-	wil::unique_hwineventhook m_ForegroundChangeHook;
-	wil::unique_hwineventhook m_TitleChangeHook;
-	wil::unique_hwineventhook m_ParentChangeHook;
 	wil::unique_hwineventhook m_OrderChangeHook;
-	wil::unique_hpowernotify m_PowerSaverHook;
-
-	// IAppVisibility
-	wil::com_ptr<IAppVisibility> m_IAV;
-	wilx::unique_com_token<&IAppVisibility::Unadvise> m_IAVECookie;
-
-	// ICortanaExperienceManager
-	winrt::Windows::Internal::Shell::Experience::ICortanaExperienceManager m_SearchManager;
-	winrt::event_token m_SuggestionsShownToken, m_SuggestionsHiddenToken;
+	wil::unique_hwineventhook m_ParentChangeHook;
 
 	// ShellViewCoordinator
-	winrt::WindowsUdk::UI::Shell::ShellViewCoordinator m_SearchViewCoordinator;
-	winrt::event_token m_SearchViewVisibilityChangedToken;
-	winrt::WindowsUdk::UI::Shell::ShellViewCoordinator m_FindInStartViewCoordinator;
-	winrt::event_token m_FindInStartVisibilityChangedToken;
 	winrt::WindowsUdk::UI::Shell::ShellViewCoordinator m_TaskViewViewCoordinator;
 	winrt::event_token m_TaskViewVisibilityChangedToken;
 
@@ -129,18 +100,11 @@ private:
 	std::optional<UINT> m_RefreshRequestedMessage;
 	std::optional<UINT> m_TaskViewVisibilityChangeMessage;
 	std::optional<UINT> m_IsTaskViewOpenedMessage;
-	std::optional<UINT> m_StartVisibilityChangeMessage;
-	std::optional<UINT> m_SearchVisibilityChangeMessage;
-	std::optional<UINT> m_FindInStartVisibilityChangeMessage;
 	std::optional<UINT> m_ForceRefreshTaskbar;
-	std::optional<UINT> m_ApplyColorPreview;
 
 	// Explorer crash detection
 	std::chrono::steady_clock::time_point m_LastExplorerRestart;
 	DWORD m_LastExplorerPid;
-
-	// Color previews
-	std::array<std::optional<Util::Color>, 7> m_ColorPreviews;
 
 	// Hook DLL
 	LoadableDll m_HookDll;
@@ -154,7 +118,6 @@ private:
 
 	// Other
 	bool m_IsWindows11;
-	bool m_IsBlurAccentStateSupported;
 
 	// Type aliases
 	using taskbar_iterator = decltype(m_Taskbars)::iterator;
@@ -166,20 +129,15 @@ private:
 	void CALLBACK OnAeroPeekEnterExit(DWORD event, HWND, LONG, LONG, DWORD, DWORD);
 	void CALLBACK OnWindowStateChange(DWORD, HWND hwnd, LONG idObject, LONG idChild, DWORD, DWORD);
 	void CALLBACK OnWindowCreateDestroy(DWORD event, HWND hwnd, LONG idObject, LONG idChild, DWORD, DWORD);
-	void CALLBACK OnForegroundWindowChange(DWORD, HWND hwnd, LONG idObject, LONG idChild, DWORD, DWORD);
 	void CALLBACK OnWindowOrderChange(DWORD, HWND hwnd, LONG idObject, LONG idChild, DWORD, DWORD);
-	void OnStartVisibilityChange(bool state);
 	void OnTaskViewVisibilityChange(bool state);
-	void OnSearchVisibilityChange(bool state);
-	void OnFindInStartVisibilityChange(bool state);
 	void OnForceRefreshTaskbar(Window taskbar);
 	LRESULT OnSystemSettingsChange(UINT uiAction);
-	LRESULT OnPowerBroadcast(const POWERBROADCAST_SETTING *settings);
 	LRESULT OnRequestAttributeRefresh(LPARAM lParam);
 	LRESULT MessageHandler(UINT uMsg, WPARAM wParam, LPARAM lParam) override;
 
-	// Config
-	TaskbarAppearance GetConfig(taskbar_iterator taskbar) const;
+	// Appearance
+	TaskbarAppearance GetAppearance(taskbar_iterator taskbar) const;
 
 	// Attribute
 	void ShowAeroPeekButton(const TaskbarInfo &taskbar, bool show);
@@ -201,64 +159,17 @@ private:
 
 	// Other
 	static bool SetNewWindowExStyle(Window wnd, LONG_PTR oldStyle, LONG_PTR newStyle);
-	static void DumpWindowSet(std::wstring_view prefix, const std::unordered_set<Window> &set, bool showInfo = true);
 	static std::wstring DumpWindow(Window window);
-	void CreateAppVisibility();
-	void CreateSearchManager();
-	void UnregisterSearchCallbacks() noexcept;
 	void CreateTaskViewManager();
 	void UnregisterTaskViewCallbacks() noexcept;
 	WINEVENTPROC CreateThunk(void (CALLBACK TaskbarAttributeWorker:: *proc)(DWORD, HWND, LONG, LONG, DWORD, DWORD));
 	static wil::unique_hwineventhook CreateHook(DWORD eventMin, DWORD eventMax, WINEVENTPROC proc);
 	void ReturnToStock();
-	bool IsStartMenuOpened() const;
-	bool IsSearchOpened() const;
-	bool IsFindInStartOpened() const;
 	void InsertTaskbar(HMONITOR mon, Window window);
 	static BOOL CALLBACK MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData);
 	static BOOL CALLBACK WindowEnumProc(HWND hwnd, LPARAM lParam);
 	static HMONITOR GetTaskbarMonitor(Window taskbar);
 	static TaskbarType GetTaskbarType(Window taskbar);
-
-	inline TaskbarAppearance WithPreview(txmp::TaskbarState state, const TaskbarAppearance &appearance) const
-	{
-		const auto &preview = m_ColorPreviews.at(static_cast<std::size_t>(state));
-		if (preview)
-		{
-			return { appearance.Accent, *preview, appearance.ShowPeek, appearance.ShowLine, appearance.BlurRadius };
-		}
-		else
-		{
-			return appearance;
-		}
-	}
-
-	inline static HMONITOR GetStartMenuMonitor() noexcept
-	{
-		// we assume that start is the current foreground window;
-		// haven't seen a case where that wasn't true yet.
-		// NOTE: this only stands *when* we get notified that
-		// start has opened (and as long as it is). when we get
-		// notified that it's closed another window may be the
-		// foreground window already (eg the user dismissed start
-		// by clicking on a window)
-		Sleep(5); // give it a bit of delay because sometimes it doesn't capture it right
-		return Window::ForegroundWindow().monitor();
-	}
-
-	inline static HMONITOR GetSearchMonitor() noexcept
-	{
-		// same assumption for search
-		Sleep(5);
-		return Window::ForegroundWindow().monitor();
-	}
-
-	inline static HMONITOR GetFindInStartMonitor() noexcept
-	{
-		// same assumption for find in start
-		Sleep(5);
-		return Window::ForegroundWindow().monitor();
-	}
 
 	inline static wil::unique_hwineventhook CreateHook(DWORD event, WINEVENTPROC proc)
 	{
@@ -266,37 +177,9 @@ private:
 	}
 
 public:
-	TaskbarAttributeWorker(ConfigManager &cfgManager, HINSTANCE hInstance, DynamicLoader &loader, const std::optional<std::filesystem::path> &storageFolder);
+	TaskbarAttributeWorker(HINSTANCE hInstance, DynamicLoader &loader, const std::optional<std::filesystem::path> &storageFolder);
 
-	inline void ConfigurationChanged()
-	{
-		RefreshAllAttributes();
-	}
-
-	void ApplyColorPreview(txmp::TaskbarState state, Util::Color color)
-	{
-		m_ColorPreviews.at(static_cast<std::size_t>(state)) = color;
-		ConfigurationChanged();
-	}
-
-	inline void RemoveColorPreview(txmp::TaskbarState state)
-	{
-		m_ColorPreviews.at(static_cast<std::size_t>(state)).reset();
-		ConfigurationChanged();
-	}
-
-	void DumpState();
 	void ResetState(bool manual = false);
-
-	TaskbarType GetType() noexcept
-	{
-		return m_TaskbarType;
-	}
-
-	bool IsBlurAccentStateSupported() noexcept
-	{
-		return m_IsBlurAccentStateSupported;
-	}
 
 	~TaskbarAttributeWorker() noexcept(false);
 };

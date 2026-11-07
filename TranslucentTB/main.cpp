@@ -137,17 +137,5 @@ _Use_decl_annotations_ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, wchar
 	HresultErrorCatch(spdlog::level::critical, L"Initialization of Windows Runtime failed.");
 
 	// Run the main program loop. When this method exits, TranslucentTB itself is about to exit.
-	const auto ret = Application(hInstance, std::move(storageFolder)).Run();
-
-	// why are we brutally terminating you might ask?
-	// Windows.UI.Xaml.dll likes to read null pointers if you exit the app too quickly after
-	// closing a XAML window. While this is not a big deal for the user since we
-	// are about to exit and saved everything, it pollutes telemetry and system crash data.
-	// It's not easily doable to catch SEH exceptions in post-Main DLL unload, so instead just
-	// brutally terminating will work.
-	// Caused specifically by ColorPicker, go figure: https://github.com/microsoft/microsoft-ui-xaml/issues/3541
-	TerminateProcess(GetCurrentProcess(), ret);
-
-	// just in case
-	return ret;
+	return Application(hInstance, std::move(storageFolder)).Run();
 }

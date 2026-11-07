@@ -13,5 +13,4 @@
   <Project Path="Tests/Tests.vcxproj" Id="a61fe3be-19df-4dc8-931a-077181044b9a" />
   <Project Path="TranslucentTB/TranslucentTB.vcxproj" Id="59f844aa-8d3c-431c-b8cc-57682915f551" />
   <Project Path="WindowsUdk/WindowsUdk.vcxproj" Id="55ed608b-b142-43a8-b42f-bbf292a61cbd" />
-  <Project Path="Xaml/Xaml.vcxproj" Id="9875d8e1-9594-445e-a0e4-07c6027f85e0" />
 </Solution>

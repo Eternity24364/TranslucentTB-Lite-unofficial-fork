@@ -30,15 +30,6 @@ TEST(Util_HsvColor_Constructor, ConstructorFromHSVAGivesCorrectValue)
 	ASSERT_EQ(col.A, 0.70);
 }
 
-TEST(Util_HsvColor_Constructor, ConstructorFromWinRTGivesCorrectValue)
-{
-	const Util::HsvColor col = txmp::HsvColor { 67.0, 0.68, 0.69, 0.70 };
-	ASSERT_EQ(col.H, 67.0);
-	ASSERT_EQ(col.S, 0.68);
-	ASSERT_EQ(col.V, 0.69);
-	ASSERT_EQ(col.A, 0.70);
-}
-
 TEST(Util_HsvColor_Constructor, ConstructorFromFloat4GivesCorrectValue)
 {
 	const Util::HsvColor col = wf::Numerics::float4 { 67.0f, 0.68f, 0.69f, 0.70f };
@@ -46,17 +37,6 @@ TEST(Util_HsvColor_Constructor, ConstructorFromFloat4GivesCorrectValue)
 	ASSERT_EQ(col.S, 0.68f);
 	ASSERT_EQ(col.V, 0.69f);
 	ASSERT_EQ(col.A, 0.70f);
-}
-
-TEST(Util_HsvColor_ToWinRT, ConvertsToSameColor)
-{
-	const txmp::HsvColor convertedCol = Util::HsvColor { 67.0, 0.68, 0.69, 0.70 };
-	const txmp::HsvColor originalCol = { .H = 67.0, .S = 0.68, .V = 0.69, .A = 0.70 };
-
-	ASSERT_EQ(convertedCol.H, originalCol.H);
-	ASSERT_EQ(convertedCol.S, originalCol.S);
-	ASSERT_EQ(convertedCol.V, originalCol.V);
-	ASSERT_EQ(convertedCol.A, originalCol.A);
 }
 
 TEST(Util_HsvColor_ToFloat4, ConvertsToSameColor)
