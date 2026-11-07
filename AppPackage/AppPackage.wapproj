@@ -77,18 +77,8 @@
     <Content Include="Assets-$(BuildType)\StoreLogo.scale-400.png" Link="Assets\StoreLogo.scale-400.png" />
     <Content Include="Assets-$(BuildType)\Wide310x150Logo.jpeg" Link="Assets\Wide310x150Logo.jpeg" />
     <Content Include="Assets-$(BuildType)\Wide310x150Logo.scale-400.jpeg" Link="Assets\Wide310x150Logo.scale-400.jpeg" />
-    <PRIResource Include="Strings\de-DE\Resources.resw" />
-    <PRIResource Include="Strings\es-US\Resources.resw" />
     <PRIResource Include="Strings\en-US\Resources.resw" />
-    <PRIResource Include="Strings\he-IL\Resources.resw" />
-    <PRIResource Include="Strings\id-ID\Resources.resw" />
-    <PRIResource Include="Strings\ja-JP\Resources.resw" />
-    <PRIResource Include="Strings\ko-KR\Resources.resw" />
-    <PRIResource Include="Strings\ru-RU\Resources.resw" />
-    <PRIResource Include="Strings\tr-TR\Resources.resw" />
-    <PRIResource Include="Strings\uk-UA\Resources.resw" />
     <PRIResource Include="Strings\zh-CN\Resources.resw" />
-    <PRIResource Include="Strings\zh-TW\Resources.resw" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\TranslucentTB\TranslucentTB.vcxproj" />

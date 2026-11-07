@@ -14,6 +14,8 @@
     <ConfigurationType>Application</ConfigurationType>
     <GenerateManifest>true</GenerateManifest>
     <RootNamespace>TranslucentTB</RootNamespace>
+    <!-- This project has no IDL of its own, so it never produces a WinMD. -->
+    <CppWinRTGenerateWindowsMetadata>false</CppWinRTGenerateWindowsMetadata>
   </PropertyGroup>
   <Import Project="..\Common\CppProject.props" />
   <PropertyGroup>
@@ -137,11 +139,6 @@
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="vcpkg.json" />
-  </ItemGroup>
-  <ItemGroup>
-    <Midl Include="taskbar\ShellExperience.idl">
-      <SubType>Designer</SubType>
-    </Midl>
   </ItemGroup>
   <ItemGroup>
     <PropertyPageSchema Include="resources\ResourceFileMapping.xml" />
