@@ -46,8 +46,7 @@ The portable build does not include the MSIX startup task; use a shortcut in
 
 ### MSIX (signed with a self-signed certificate)
 
-Windows only installs the package after the signing certificate is trusted. **Do not
-double-click the `.msix` before doing step 1** — it fails with `0x800B0109`.
+Windows only installs the package after the signing certificate is trusted:
 
 1. Double-click `TranslucentTB-Lite.cer` -> **Install Certificate**.
 2. Select **Local Machine**, choose **Place all certificates in the following store** and

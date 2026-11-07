@@ -142,8 +142,7 @@ $msixInstall = @"
 TranslucentTB Lite $version - MSIX installation
 
 The package is signed by a self-signed certificate (Publisher: CN=eternity).
-Windows only installs it after that certificate is trusted. Do NOT double-click the
-.msix before step 1: it fails with 0x800B0109.
+Windows only installs it after that certificate is trusted.
 
 1. Double-click TranslucentTB-Lite.cer and choose Install Certificate.
 2. Select Local Machine, then "Place all certificates in the following store".
