@@ -39,14 +39,14 @@ The portable build writes logs to `%TEMP%\TranslucentTB` (warnings and errors on
 The package is signed with a self-signed certificate (`CN=eternity`), so Windows only
 installs it after that certificate is trusted. This is a one-time administrator step.
 
-### 0. Remove an old development build first
-
-If you previously installed this project through Visual Studio (F5) or an older dev
-package, remove it first, otherwise the install/update fails with `0x80073D06`:
-
-```powershell
-Get-AppxPackage TranslucentTB | Remove-AppxPackage
-```
+> **Coming from a development build?** These steps are all a normal user needs. Only if
+> you previously installed this project through Visual Studio (F5) or an older development
+> package with the same version, remove it first, otherwise the install can fail with
+> `0x80073D06`:
+>
+> ```powershell
+> Get-AppxPackage TranslucentTB | Remove-AppxPackage
+> ```
 
 ### 1. Trust the certificate (administrator)
 
@@ -111,7 +111,7 @@ If the app asks to restart Windows after an update, Explorer was still holding
 | Symptom | Cause / fix |
 |---|---|
 | `0x800B0109` during MSIX install | certificate not in *Local Machine -> Trusted Root Certification Authorities*; repeat step 1 as administrator |
-| `0x80073D06` or "newer version already installed" | remove the old package first (`Get-AppxPackage TranslucentTB \| Remove-AppxPackage`) |
+| `0x80073D06` or "newer version already installed" | an older development build (for example from F5) is registered; remove it with `Get-AppxPackage TranslucentTB \| Remove-AppxPackage` |
 | SmartScreen "unknown publisher" for the portable build | expected for a self-signed build; *More info* -> *Run anyway*, or use the MSIX |
 | Tray icon disappears after an Explorer restart | wait a few seconds; if it does not come back, start the app again |
 | Taskbar has no effect | make sure the official TranslucentTB (or another copy) is not running; both share the tray GUID and single-instance mutex |
@@ -129,14 +129,16 @@ If the app asks to restart Windows after an update, Explorer was still holding
 
 **MSIX 版（需要管理员一次）**
 
-1. 先移除旧的开发包：`Get-AppxPackage TranslucentTB | Remove-AppxPackage`；
-2. 以管理员打开 PowerShell，执行：
+> 如果你之前用 Visual Studio F5 部署过旧开发包（或装过同版本的开发包），先执行
+> `Get-AppxPackage TranslucentTB | Remove-AppxPackage`。从 Release 正常安装的用户**不需要**这一步。
+
+1. 以管理员打开 PowerShell，执行：
    ```powershell
    certutil -addstore -f Root .\TranslucentTB-Lite.cer
    certutil -addstore -f TrustedPeople .\TranslucentTB-Lite.cer
    ```
-3. 双击 `.msix`，或执行 `Add-AppxPackage .\TranslucentTB-Lite-<版本>-x64.msix`；
-4. 从开始菜单启动 **TranslucentTB Lite**。
+2. 双击 `.msix`，或执行 `Add-AppxPackage .\TranslucentTB-Lite-<版本>-x64.msix`；
+3. 从开始菜单启动 **TranslucentTB Lite**。
 
 常见错误：`0x800B0109` 是证书没装进「本地计算机 → 受信任的根证书颁发机构」；
 `0x80073D06` 是旧包没卸载。不要同时运行官方版，它们共用托盘 GUID 和单实例互斥。
