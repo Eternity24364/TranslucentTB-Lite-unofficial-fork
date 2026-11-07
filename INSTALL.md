@@ -125,22 +125,18 @@ If the app asks to restart Windows after an update, Explorer was still holding
 
 **MSIX 版（需要管理员一次）**
 
-> ⚠️ **必须先完成第 1 步安装证书，再双击 `.msix`。** 证书还没装进「本地计算机 → 受信任的根证书颁发机构」时，双击会直接失败（`0x800B0109`，提示证书不受信任）。
->
-> 只有你之前用 Visual Studio F5 部署过旧开发包（或装过同版本的开发包）时，才需要先执行
-> `Get-AppxPackage TranslucentTB | Remove-AppxPackage`；从 Release 正常安装的用户**不需要**这一步。
 
 1. 以管理员打开 PowerShell，执行：
    ```powershell
    certutil -addstore -f Root .\TranslucentTB-Lite.cer
    certutil -addstore -f TrustedPeople .\TranslucentTB-Lite.cer
    ```
-   或者双击 `.cer` → 安装证书 → **本地计算机** → **受信任的根证书颁发机构**。
-2. 证书装好后，双击 `.msix`，Windows 会打开「应用安装程序」，点**安装**。
+   或者双击 `TranslucentTB-Lite.cer` → 安装证书 → **本地计算机** → **受信任的根证书颁发机构**。
+2. 证书装好后，双击 `TranslucentTB-Lite.msix`，Windows 会打开「应用安装程序」，点**安装**。
    如果双击没有反应，用命令安装：
    ```powershell
    Add-AppxPackage .\TranslucentTB-Lite-<版本>-x64.msix
    ```
 3. 从开始菜单启动 **TranslucentTB Lite**。
 
-常见错误：`0x800B0109` = 证书没装好，回到第 1 步；`0x80073D06` = 有旧开发包残留，先卸载。不要同时运行官方版，它们共用托盘 GUID 和单实例互斥。
+常见错误：`0x800B0109` = 证书没装好，回到第 1 步；不要同时运行官方版，它们共用托盘 GUID 和单实例互斥。
