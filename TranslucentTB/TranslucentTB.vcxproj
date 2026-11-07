@@ -128,9 +128,7 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="resources\TranslucentTB.black.ico" />
-    <Image Include="resources\TranslucentTB.canary.ico" />
-    <Image Include="resources\TranslucentTB.dev.ico" />
-    <Image Include="resources\TranslucentTB.release.ico" />
+    <Image Include="resources\TranslucentTB.ico" />
     <Image Include="resources\TranslucentTB.white.ico" />
   </ItemGroup>
   <ItemGroup>

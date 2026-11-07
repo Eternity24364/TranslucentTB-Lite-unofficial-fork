@@ -351,3 +351,6 @@ MigrationBackup/
 .vscode/
 enc_temp_folder/
 vcpkg_installed/
+# Local signing material and release artifacts
+certs/
+dist/

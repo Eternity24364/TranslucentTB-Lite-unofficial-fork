@@ -1,4 +1,4 @@
-# TranslucentTB Lite (unofficial fork)
+# TranslucentTB Lite
 
 > **This is an unofficial, stripped-down fork of [TranslucentTB](https://github.com/TranslucentTB/TranslucentTB).**
 > It is **not affiliated with, sponsored by, or endorsed by** the TranslucentTB project or its authors.
@@ -60,16 +60,17 @@ built; install the "Windows application packaging" / UWP build tools first.
 
 ## Running and updating
 
-- The package identity, publisher identity, tray icon GUID and single-instance mutex are
-  **unchanged from upstream**. Do not install this build alongside the official
-  TranslucentTB (or another copy of this fork); they will fight over the same taskbar and
-  tray icon.
+- The tray icon GUID and the single-instance mutex are **unchanged from upstream**, so this
+  build cannot run alongside the official TranslucentTB (or another copy of this fork).
+  The package publisher is now `CN=eternity`, so the MSIX is a separate package from the
+  official one, but the runtime still conflicts.
 - When the app is updated while Explorer already has `ExplorerTAP.dll` loaded, Windows
   cannot replace the copy in the package's `TempState` folder and the app asks for a
   restart. Restart `explorer.exe` (or Windows) and start the app again.
 - Logs are written to
-  `%LOCALAPPDATA%\Packages\TranslucentTB_99myrp4edc0yc\TempState\<process-start-time>.log`
-  and only contain warnings/errors.
+  `%LOCALAPPDATA%\Packages\TranslucentTB_*<publisher-hash>\TempState\<process-start-time>.log`
+  in packaged mode (or `%TEMP%\TranslucentTB` in portable mode) and only contain
+  warnings/errors.
 
 ## Naming, icons and trademarks
 
@@ -84,40 +85,35 @@ built; install the "Windows application packaging" / UWP build tools first.
 
 ## Releases and signing
 
-An MSIX package must be signed before Windows will install it outside Developer Mode.
-There are three practical options:
+Each release ships two artifacts:
 
-1. **Portable ZIP (simplest, no signing).** Ship `TranslucentTB.exe` together with
-   `ExplorerHooks.dll`, `ExplorerTAP.dll` and `ProgramLog.dll`. Windows may show a
-   SmartScreen "unknown publisher" prompt; users choose *More info* -> *Run anyway*.
-   The tray icon and taskbar effects work; the MSIX startup task is not available in this
-   mode.
-2. **Self-signed MSIX (free).** Create a code-signing certificate, put its subject into
-   `Publisher` in [Package.appxmanifest](AppPackage/Package.appxmanifest), sign the package
-   with `signtool`, and tell users to trust your `.cer` first:
+- `TranslucentTB-Lite-<version>-portable-x64.zip` — unpack and run `TranslucentTB.exe`.
+  No installation or signing is required; Windows SmartScreen may warn about an unknown
+  publisher. The portable build needs the Microsoft Visual C++ 2015-2022 Redistributable if
+  `MSVCP140.dll` is not already present. The startup task is not available in this mode.
+- `TranslucentTB-Lite-<version>-x64.msix` — the packaged build. It is signed with a
+  self-signed certificate (`CN=eternity`, valid until 2031) whose public half ships as
+  `TranslucentTB-Lite.cer`.
 
-   ```powershell
-   $cert = New-SelfSignedCertificate -Type Custom -Subject "CN=Your Name" `
-       -KeyUsage DigitalSignature -FriendlyName "TranslucentTB Lite" `
-       -CertStoreLocation Cert:\CurrentUser\My `
-       -TextExtension @("2.5.29.37={text}1.3.6.1.5.5.7.3.3")
-   Export-PfxCertificate -Cert $cert -FilePath ttb-lite.pfx -Password (Read-Host -AsSecureString)
-   Export-Certificate  -Cert $cert -FilePath ttb-lite.cer
+**Installing the MSIX:** Windows requires the signing certificate to be trusted. Install
+`TranslucentTB-Lite.cer` into *Local Machine* -> *Trusted Root Certification Authorities*
+(administrator rights required; *Trusted People* can be added as well), then double-click
+the `.msix` or run `Add-AppxPackage .\TranslucentTB-Lite-<version>-x64.msix`. Only trust the
+certificate if the package came from this repository. A paid, publicly trusted
+code-signing certificate would remove this step, but is not used here.
 
-   signtool sign /fd SHA256 /f ttb-lite.pfx /tr http://timestamp.digicert.com /td SHA256 `
-       AppPackage_1.0.0.0_x64.msix
-   ```
+**Signing new releases:** the private key and password live in `certs/` (ignored by git,
+never commit them) and `scripts/publish.ps1` builds, signs the binaries and the MSIX, and
+writes everything to `dist/`:
 
-   Users install the certificate once (double-click -> *Install Certificate* ->
-   *Local Machine* -> *Trusted People*), then can install the MSIX. The certificate must be
-   renewed when it expires; timestamping keeps old releases valid.
-3. **Commercial code-signing certificate (paid).** Removes the "unknown publisher" warning
-   entirely, but requires buying a certificate and keeping its private key in a hardware
-   token/HSM. `Publisher` must match the certificate subject.
+```powershell
+pwsh -File scripts/publish.ps1
+```
 
-This repository currently keeps the upstream `Publisher` value, so it builds and runs via
-F5/Developer Mode but is not signed for distribution. Change `Publisher` to your own
-certificate subject before publishing a signed MSIX.
+If the certificate is lost, a new one must be created with the same subject (`CN=eternity`)
+and users have to trust it again. Keep `certs/pfx-password.txt` safe; without it the PFX
+cannot be used. Timestamping (`/tr`) keeps already-published signatures valid after the
+certificate expires.
 
 ## License
 
